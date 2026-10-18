@@ -1,0 +1,17 @@
+{
+  "name": "ApirApir.Shop",
+  "rootNamespace": "ApirApir.Shop",
+  "references": [
+    "ApirApir.Battle",
+    "Unity.Netcode.Runtime"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

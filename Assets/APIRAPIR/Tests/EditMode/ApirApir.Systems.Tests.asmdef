@@ -1,0 +1,19 @@
+{
+  "name": "ApirApir.Systems.Tests",
+  "rootNamespace": "ApirApir.Tests",
+  "references": [
+    "ApirApir.Battle",
+    "ApirApir.Shop",
+    "ApirApir.Crafting",
+    "Unity.Netcode.Runtime"
+  ],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

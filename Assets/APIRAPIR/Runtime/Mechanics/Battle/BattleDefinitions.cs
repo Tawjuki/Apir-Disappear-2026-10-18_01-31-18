@@ -11,7 +11,10 @@ namespace ApirApir.Battle
             PartRarity rarity,
             int additionalHitPoints = 0,
             float attackBonusPercent = 0f,
-            IReadOnlyList<IPassiveBattleModifier> passiveModifiers = null)
+            IReadOnlyList<IPassiveBattleModifier> passiveModifiers = null,
+            float speedBonusPercent = 0f,
+            float criticalChanceBonusPercent = 0f,
+            float dodgeChanceBonusPercent = 0f)
         {
             if (string.IsNullOrWhiteSpace(id))
             {
@@ -28,6 +31,9 @@ namespace ApirApir.Battle
             Rarity = rarity;
             AdditionalHitPoints = additionalHitPoints;
             AttackBonusPercent = attackBonusPercent;
+            SpeedBonusPercent = speedBonusPercent;
+            CriticalChanceBonusPercent = criticalChanceBonusPercent;
+            DodgeChanceBonusPercent = dodgeChanceBonusPercent;
             PassiveModifiers = Copy(passiveModifiers ?? Array.Empty<IPassiveBattleModifier>());
         }
 
@@ -36,6 +42,9 @@ namespace ApirApir.Battle
         public PartRarity Rarity { get; }
         public int AdditionalHitPoints { get; }
         public float AttackBonusPercent { get; }
+        public float SpeedBonusPercent { get; }
+        public float CriticalChanceBonusPercent { get; }
+        public float DodgeChanceBonusPercent { get; }
         public IReadOnlyList<IPassiveBattleModifier> PassiveModifiers { get; }
 
         private static IPassiveBattleModifier[] Copy(IReadOnlyList<IPassiveBattleModifier> source)
@@ -140,10 +149,7 @@ namespace ApirApir.Battle
         {
             for (int hit = 0; hit < HitCount; hit++)
             {
-                if (!context.DealDamage(SkillPower))
-                {
-                    break;
-                }
+                context.DealDamage(SkillPower);
             }
         }
     }
@@ -225,7 +231,14 @@ namespace ApirApir.Battle
             string id,
             SkillCategory category,
             int cooldownExchanges,
-            IReadOnlyList<ISkillEffect> effects)
+            IReadOnlyList<ISkillEffect> effects,
+            string displayName = null,
+            string description = null,
+            string soulId = null,
+            int rank = 0,
+            int talinoUnlockCost = 0,
+            SkillTargetType targetType = SkillTargetType.Enemy,
+            SkillExecutionDefinition execution = null)
         {
             if (string.IsNullOrWhiteSpace(id))
             {
@@ -242,15 +255,46 @@ namespace ApirApir.Battle
                 throw new ArgumentException("Normal skills must have zero cooldown.", nameof(cooldownExchanges));
             }
 
+            if (rank < 0 || rank > 5 || talinoUnlockCost < 0)
+            {
+                throw new ArgumentOutOfRangeException("Skill rank or Talino cost is invalid.");
+            }
+
+            if (category == SkillCategory.Normal &&
+                (rank != 0 || talinoUnlockCost != 0 || !string.IsNullOrWhiteSpace(soulId)))
+            {
+                throw new ArgumentException("Normal skills cannot require a Soul, rank, or Talino.");
+            }
+
+            if (category == SkillCategory.Soul &&
+                (rank < 1 || rank > 5 || string.IsNullOrWhiteSpace(soulId)))
+            {
+                throw new ArgumentException("Soul skills require a Soul ID and rank from one to five.");
+            }
+
             Id = id;
             Category = category;
             CooldownExchanges = cooldownExchanges;
             Effects = CopyEffects(effects ?? throw new ArgumentNullException(nameof(effects)));
+            DisplayName = string.IsNullOrWhiteSpace(displayName) ? id : displayName.Trim();
+            Description = description == null ? string.Empty : description.Trim();
+            SoulId = soulId == null ? string.Empty : soulId.Trim();
+            Rank = rank;
+            TalinoUnlockCost = talinoUnlockCost;
+            TargetType = targetType;
+            Execution = execution;
         }
 
         public string Id { get; }
+        public string DisplayName { get; }
+        public string Description { get; }
         public SkillCategory Category { get; }
+        public string SoulId { get; }
+        public int Rank { get; }
+        public int TalinoUnlockCost { get; }
         public int CooldownExchanges { get; }
+        public SkillTargetType TargetType { get; }
+        public SkillExecutionDefinition Execution { get; }
         public IReadOnlyList<ISkillEffect> Effects { get; }
 
         private static ISkillEffect[] CopyEffects(IReadOnlyList<ISkillEffect> source)

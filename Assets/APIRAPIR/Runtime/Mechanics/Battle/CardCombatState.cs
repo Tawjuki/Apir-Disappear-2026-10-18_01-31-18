@@ -46,6 +46,7 @@ namespace ApirApir.Battle
         private readonly Dictionary<string, SkillDefinition> skills;
         private readonly Dictionary<string, int> cooldowns;
         private readonly Dictionary<string, int> statuses;
+        private readonly HashSet<string> statusesAppliedThisExchange;
         private readonly List<TimedAttackModifier> temporaryAttackModifiers;
         private readonly PartCombatState[] parts;
 
@@ -77,6 +78,7 @@ namespace ApirApir.Battle
             }
 
             statuses = new Dictionary<string, int>(StringComparer.Ordinal);
+            statusesAppliedThisExchange = new HashSet<string>(StringComparer.Ordinal);
             temporaryAttackModifiers = new List<TimedAttackModifier>();
             MaximumHitPoints = statCalculator.CalculateMaximumHitPoints(this, true);
             CurrentHitPoints = MaximumHitPoints;
@@ -93,6 +95,8 @@ namespace ApirApir.Battle
         public IReadOnlyDictionary<string, int> Statuses => statuses;
         public IReadOnlyList<TimedAttackModifier> TemporaryAttackModifiers => temporaryAttackModifiers;
         public int EquippedSkillCount => skills.Count;
+        public bool ReceivedDirectDamagePreviousExchange { get; internal set; }
+        internal bool ReceivedDirectDamageThisExchange { get; set; }
 
         public bool TryGetSkill(string skillId, out SkillDefinition skill)
         {
@@ -119,6 +123,13 @@ namespace ApirApir.Battle
 
         internal IEnumerable<SkillDefinition> Skills => skills.Values;
         internal Dictionary<string, int> MutableCooldowns => cooldowns;
+        internal Dictionary<string, int> MutableStatuses => statuses;
+        internal HashSet<string> StatusesAppliedThisExchange => statusesAppliedThisExchange;
+
+        public bool HasStatus(string statusId)
+        {
+            return statuses.ContainsKey(statusId ?? string.Empty);
+        }
 
         internal int ApplyDamage(int amount)
         {
@@ -151,6 +162,13 @@ namespace ApirApir.Battle
             }
         }
 
+        internal bool RemoveStatus(string statusId)
+        {
+            string id = statusId ?? string.Empty;
+            statusesAppliedThisExchange.Remove(id);
+            return statuses.Remove(id);
+        }
+
         internal void AddTemporaryAttackModifier(float percent, int duration)
         {
             temporaryAttackModifiers.Add(new TimedAttackModifier(percent, duration));
@@ -158,23 +176,6 @@ namespace ApirApir.Battle
 
         internal void AdvanceTimedEffects()
         {
-            if (statuses.Count > 0)
-            {
-                var keys = new List<string>(statuses.Keys);
-                for (int i = 0; i < keys.Count; i++)
-                {
-                    int next = statuses[keys[i]] - 1;
-                    if (next <= 0)
-                    {
-                        statuses.Remove(keys[i]);
-                    }
-                    else
-                    {
-                        statuses[keys[i]] = next;
-                    }
-                }
-            }
-
             for (int i = temporaryAttackModifiers.Count - 1; i >= 0; i--)
             {
                 temporaryAttackModifiers[i].RemainingExchanges--;
@@ -183,6 +184,12 @@ namespace ApirApir.Battle
                     temporaryAttackModifiers.RemoveAt(i);
                 }
             }
+        }
+
+        internal void CompleteExchangeHistory()
+        {
+            ReceivedDirectDamagePreviousExchange = ReceivedDirectDamageThisExchange;
+            ReceivedDirectDamageThisExchange = false;
         }
 
         internal void FinalizeAfterBattle(CardStatCalculator statCalculator)

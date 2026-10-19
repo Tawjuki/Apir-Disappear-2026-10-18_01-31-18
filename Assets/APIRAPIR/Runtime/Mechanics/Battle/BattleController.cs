@@ -36,7 +36,8 @@ namespace ApirApir.Battle
             BattleSettings settings,
             IBattleAuthority authority,
             IRandomNumberProvider random,
-            IDamageCalculationStrategy damageStrategy = null)
+            IDamageCalculationStrategy damageStrategy = null,
+            StatusEffectCatalog statusCatalog = null)
         {
             this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
             this.settings.Validate();
@@ -53,11 +54,21 @@ namespace ApirApir.Battle
             var damageCalculator = new DamageCalculator(
                 statCalculator,
                 damageStrategy ?? new ProvisionalDamageCalculationStrategy());
+            StatusEffectCatalog registeredStatuses = statusCatalog ??
+                StatusEffectCatalog.CreateDefault(settings.SunogDamagePerExchange);
+            var modifiers = new CombatModifierCalculator(registeredStatuses, settings);
             resolver = new BattleResolver(
                 State,
                 damageCalculator,
                 new PartMaintenanceSystem(random),
                 cooldownSystem,
+                new StatusEffectSystem(
+                    registeredStatuses,
+                    settings.StatusReapplicationPolicy,
+                    random),
+                modifiers,
+                settings,
+                random,
                 Publish);
 
             usedSkillsByPlayer = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal)
@@ -151,6 +162,16 @@ namespace ApirApir.Battle
 
         private void BeginActionSelection(DateTimeOffset now)
         {
+            if (State.ExchangeNumber > 1 &&
+                settings.PeriodicStatusTiming == PeriodicStatusTiming.BeginningOfExchange)
+            {
+                resolver.ProcessPeriodicStatusEffects();
+                if (TryFinishDefeat())
+                {
+                    return;
+                }
+            }
+
             State.Phase = BattlePhase.SelectingActions;
             State.SubmittedActions.Clear();
             ClearUsedSkills();
@@ -301,6 +322,11 @@ namespace ApirApir.Battle
             State.Phase = BattlePhase.ExchangeComplete;
             AdvanceCooldowns(State.FirstPlayerId);
             AdvanceCooldowns(State.SecondPlayerId);
+            if (settings.PeriodicStatusTiming == PeriodicStatusTiming.EndOfExchange)
+            {
+                resolver.ProcessPeriodicStatusEffects();
+            }
+            resolver.AdvanceStatusDurations();
             State.Fighters[State.FirstPlayerId].AdvanceTimedEffects();
             State.Fighters[State.SecondPlayerId].AdvanceTimedEffects();
             Publish(new BattleEvent(
@@ -340,6 +366,15 @@ namespace ApirApir.Battle
                         playerId,
                         subjectId: skillId,
                         value: remaining));
+                    if (remaining == 0)
+                    {
+                        Publish(new BattleEvent(
+                            BattleEventType.CooldownCompleted,
+                            State.BattleId,
+                            State.ExchangeNumber,
+                            playerId,
+                            subjectId: skillId));
+                    }
                 });
 
             foreach (string skillId in usedSkillsByPlayer[playerId])

@@ -23,6 +23,20 @@ namespace ApirApir.Crafting
         bool TryGetInventory(string playerId, out ICraftingPlayerInventory inventory);
     }
 
+    /// <summary>
+    /// Read-through extension used by card assembly. Implementations expose the same owned
+    /// instances created by crafting or purchases; assembly never mirrors the inventory.
+    /// </summary>
+    public interface IOwnedCardPartInventory : ICraftingPlayerInventory
+    {
+        bool TryGetOwnedPart(string instanceId, out OwnedCardPart part);
+    }
+
+    public interface IOwnedCardPartInventoryProvider
+    {
+        bool TryGetInventory(string playerId, out IOwnedCardPartInventory inventory);
+    }
+
     public interface ICraftingAccessPolicy
     {
         bool CanCraft(string playerId);

@@ -18,6 +18,7 @@ namespace ApirApir.Battle
     /// </summary>
     public sealed class NetcodeBattleBridge : NetworkBehaviour
     {
+        private const int MaximumIdentifierCharacters = 128;
         private AuthoritativeBattleService service;
         private INetcodeBattlePlayerResolver playerResolver;
         private bool subscribed;
@@ -72,7 +73,10 @@ namespace ApirApir.Battle
         private void SubmitFromClient(BattleActionRequest request, ulong senderClientId)
         {
             if (service == null || playerResolver == null ||
-                !playerResolver.TryGetPlayerId(senderClientId, out string playerId))
+                !playerResolver.TryGetPlayerId(senderClientId, out string playerId) ||
+                !IsBounded(playerId) || !IsBounded(request.BattleId) ||
+                !IsBounded(request.CommandId) ||
+                (request.Kind == BattleActionKind.UseSkill && !IsBounded(request.SkillId)))
             {
                 return;
             }
@@ -146,6 +150,15 @@ namespace ApirApir.Battle
             byte rejectionReason,
             ClientRpcParams rpcParams = default)
         {
+            if (!Enum.IsDefined(typeof(BattleEventType), eventType) ||
+                !Enum.IsDefined(typeof(ActionRejectionReason), rejectionReason) ||
+                !IsBounded(battleId) || !IsOptionalBounded(actorPlayerId) ||
+                !IsOptionalBounded(targetPlayerId) || !IsOptionalBounded(subjectId) ||
+                exchangeNumber < 0)
+            {
+                return;
+            }
+
             RemoteEventReceived?.Invoke(new BattleEvent(
                 (BattleEventType)eventType,
                 battleId,
@@ -157,5 +170,11 @@ namespace ApirApir.Battle
                 secondaryValue,
                 (ActionRejectionReason)rejectionReason));
         }
+
+        private static bool IsBounded(string value) =>
+            !string.IsNullOrWhiteSpace(value) && value.Length <= MaximumIdentifierCharacters;
+
+        private static bool IsOptionalBounded(string value) =>
+            string.IsNullOrEmpty(value) || value.Length <= MaximumIdentifierCharacters;
     }
 }

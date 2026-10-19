@@ -88,6 +88,12 @@ namespace ApirApir.Battle
         CancelBattle
     }
 
+    public enum PeriodicStatusTiming : byte
+    {
+        BeginningOfExchange,
+        EndOfExchange
+    }
+
     public enum BattleEndReason : byte
     {
         Defeat,
@@ -111,8 +117,20 @@ namespace ApirApir.Battle
         PartDisabled,
         HealingApplied,
         StatusEffectApplied,
+        StatusApplicationFailed,
+        StatusEffectRemoved,
+        StatusEffectExpired,
+        StatusDurationChanged,
+        PeriodicStatusDamage,
+        PeriodicStatusHealing,
+        DirectHit,
+        AttackDodged,
+        CriticalHit,
+        ActionPrevented,
         TemporaryModifierApplied,
         CooldownChanged,
+        CooldownStarted,
+        CooldownCompleted,
         ActionSkipped,
         ExchangeCompleted,
         CardDefeated,
@@ -196,6 +214,7 @@ namespace ApirApir.Battle
             DefeatInterruptionPolicy = DefeatInterruptionPolicy.StopRemainingActions;
             CooldownConvention = CooldownConvention.FullExchangesAfterUse;
             SelectionTimeoutPolicy = SelectionTimeoutPolicy.AutoPass;
+            PeriodicStatusTiming = PeriodicStatusTiming.EndOfExchange;
         }
 
         public TimeSpan SelectionDuration { get; set; }
@@ -203,12 +222,38 @@ namespace ApirApir.Battle
         public DefeatInterruptionPolicy DefeatInterruptionPolicy { get; set; }
         public CooldownConvention CooldownConvention { get; set; }
         public SelectionTimeoutPolicy SelectionTimeoutPolicy { get; set; }
+        public PeriodicStatusTiming PeriodicStatusTiming { get; set; }
+        public int SunogDamagePerExchange { get; set; } = 10;
+        public bool AllowSimultaneousPeriodicDefeat { get; set; } = true;
+        public float BaseDodgeChance { get; set; } = 0.10f;
+        public float MinimumDodgeChance { get; set; } = 0f;
+        public float MaximumDodgeChance { get; set; } = 0.30f;
+        /// <summary>Provisional until design supplies the card's base Critical Chance.</summary>
+        public float BaseCriticalChance { get; set; } = 0f;
+        public float CriticalDamageMultiplier { get; set; } = 1.5f;
+        public StatusReapplicationPolicy StatusReapplicationPolicy { get; set; } =
+            StatusReapplicationPolicy.RefreshToLongerDuration;
 
         internal void Validate()
         {
             if (SelectionDuration < TimeSpan.Zero)
             {
                 throw new ArgumentOutOfRangeException(nameof(SelectionDuration));
+            }
+
+            if (BaseDodgeChance < 0f || BaseDodgeChance > 1f ||
+                MinimumDodgeChance < 0f || MaximumDodgeChance > 1f ||
+                MinimumDodgeChance > MaximumDodgeChance || BaseCriticalChance < 0f ||
+                BaseCriticalChance > 1f || CriticalDamageMultiplier < 1f ||
+                SunogDamagePerExchange < 0)
+            {
+                throw new ArgumentOutOfRangeException("Combat probability settings are invalid.");
+            }
+
+            if (StatusReapplicationPolicy == StatusReapplicationPolicy.Stack)
+            {
+                throw new ArgumentException(
+                    "Stacking identical statuses is not supported by the provisional policy.");
             }
         }
     }

@@ -169,7 +169,9 @@ namespace ApirApir.Crafting
                 rarity,
                 recipeId,
                 battleDefinition,
-                resolver?.ResolveMarketValue(partId) ?? 0);
+                resolver?.ResolveMarketValue(partId) ?? 0,
+                characterDisplayName: characterDisplayName,
+                visualAssetId: partId);
             catalog.RegisterPartAndRecipe(part, new CraftingRecipe(recipeId, part, requirements));
         }
 

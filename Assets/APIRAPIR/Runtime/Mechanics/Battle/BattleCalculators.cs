@@ -126,16 +126,43 @@ namespace ApirApir.Battle
 
         public int Calculate(CardCombatState source, CardCombatState target, SkillDefinition skill, int skillPower)
         {
+            return CalculateWithModifiers(
+                source,
+                target,
+                skill,
+                skillPower,
+                statCalculator.CalculateAttackBonusPercent(source),
+                1f,
+                false,
+                1f);
+        }
+
+        public int CalculateWithModifiers(
+            CardCombatState source,
+            CardCombatState target,
+            SkillDefinition skill,
+            int skillPower,
+            float attackBonusPercent,
+            float incomingDamageMultiplier,
+            bool critical,
+            float criticalDamageMultiplier)
+        {
             var context = new DamageCalculationContext(
                 source,
                 target,
                 skill,
                 skillPower,
-                statCalculator.CalculateAttackBonusPercent(source));
+                attackBonusPercent);
             decimal damage = Math.Max(0m, strategy.CalculateUnroundedDamage(context));
 
             ApplyOutgoingPassives(source, target, skill, ref damage);
             ApplyIncomingPassives(source, target, skill, ref damage);
+            damage *= Math.Max(0m, (decimal)incomingDamageMultiplier);
+            if (critical)
+            {
+                damage *= Math.Max(1m, (decimal)criticalDamageMultiplier);
+            }
+
             return Math.Max(0, (int)Math.Round(damage, MidpointRounding.AwayFromZero));
         }
 

@@ -448,11 +448,14 @@ namespace ApirApir.Battle.Tests
             string battleId = "battle",
             bool authoritative = true)
         {
+            BattleSettings configured = settings ?? new BattleSettings();
+            configured.BaseDodgeChance = 0f;
+            configured.BaseCriticalChance = 0f;
             return new BattleController(
                 battleId,
                 first,
                 second,
-                settings ?? new BattleSettings(),
+                configured,
                 new FixedBattleAuthority(authoritative),
                 random ?? new SequenceRandom(0d));
         }
@@ -476,7 +479,10 @@ namespace ApirApir.Battle.Tests
                 id,
                 category,
                 cooldown,
-                new ISkillEffect[] { new DamageSkillEffect(power, hitCount) });
+                new ISkillEffect[] { new DamageSkillEffect(power, hitCount) },
+                soulId: category == SkillCategory.Soul ? SoulIds.Kanayunan : null,
+                rank: category == SkillCategory.Soul ? 1 : 0,
+                talinoUnlockCost: category == SkillCategory.Soul ? 5 : 0);
         }
 
         private static PartDefinition Part(

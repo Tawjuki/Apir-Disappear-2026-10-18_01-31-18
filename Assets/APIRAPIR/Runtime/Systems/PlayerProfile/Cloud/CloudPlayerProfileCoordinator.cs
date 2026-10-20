@@ -228,6 +228,31 @@ namespace ApirApir.PlayerProfiles
             }
         }
 
+        /// <summary>
+        /// Clears all account-specific data exposed by this process. Cloud data is not deleted.
+        /// </summary>
+        public async Task ClearSessionAsync(
+            CancellationToken cancellationToken = default)
+        {
+            if (!await EnterGateAsync(cancellationToken))
+            {
+                return;
+            }
+
+            try
+            {
+                ThrowIfDisposed();
+                ClearProfile();
+                LastFailure = CloudProfileFailure.None;
+                LastError = string.Empty;
+                SetState(CloudProfileSessionState.Uninitialized);
+            }
+            finally
+            {
+                operationGate.Release();
+            }
+        }
+
         public async Task<CloudProfileCommandStatus> ProcessCompletedMatchAsync(
             CompletedMatchResult result,
             CancellationToken cancellationToken = default)

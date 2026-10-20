@@ -12,18 +12,32 @@ namespace ApirApir.PlayerProfiles
 {
     public sealed class UnityAuthenticationPlayerIdentity : ICloudPlayerIdentity
     {
-        public string SignedInPlayerId => UnityAuthenticationSession.PlayerId;
+        public string SignedInPlayerId => UnityAccountAuthenticationRuntime.PlayerId;
 
         public async Task<CloudAuthenticationResult> EnsureAuthenticatedAsync(
             CancellationToken cancellationToken = default)
         {
             try
             {
-                string playerId = await UnityAuthenticationSession.EnsureSignedInAsync(
-                    cancellationToken);
+                AccountAuthenticationResult authentication =
+                    await UnityAccountAuthenticationRuntime.Service.RequireAuthenticatedAsync(
+                        cancellationToken);
+                if (!authentication.Succeeded)
+                {
+                    CloudAuthenticationStatus status =
+                        authentication.Status == AccountAuthenticationStatus.Cancelled
+                            ? CloudAuthenticationStatus.Cancelled
+                            : authentication.Status == AccountAuthenticationStatus.SessionExpired
+                                ? CloudAuthenticationStatus.Expired
+                                : CloudAuthenticationStatus.Unavailable;
+                    return new CloudAuthenticationResult(
+                        status,
+                        errorMessage: authentication.ErrorMessage);
+                }
+
                 return new CloudAuthenticationResult(
                     CloudAuthenticationStatus.Success,
-                    playerId);
+                    authentication.PlayerId);
             }
             catch (OperationCanceledException)
             {
@@ -206,7 +220,7 @@ namespace ApirApir.PlayerProfiles
 
         private static bool OwnsAuthenticatedAccount(string requestedPlayerId)
         {
-            string authenticatedId = UnityAuthenticationSession.PlayerId;
+            string authenticatedId = UnityAccountAuthenticationRuntime.PlayerId;
             return authenticatedId.Length > 0 &&
                    string.Equals(
                        authenticatedId,

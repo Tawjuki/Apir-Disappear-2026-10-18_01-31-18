@@ -27,8 +27,10 @@ namespace ApirApir.PlayerProfiles
             new Dictionary<string, PlayerProfileSnapshot>(StringComparer.Ordinal);
         private readonly PlayerNamePolicy playerNamePolicy = new PlayerNamePolicy();
         private bool subscribed;
+        private string localAuthenticatedPlayerId = string.Empty;
 
         public event Action<PlayerProfileSnapshot> RemoteProfileReceived;
+        public event Action<string> RemoteProfileCleared;
 
         public void Initialize(
             PlayerProfileService profileService,
@@ -218,13 +220,21 @@ namespace ApirApir.PlayerProfiles
                 return;
             }
 
+            localAuthenticatedPlayerId = profile.PlayerId ?? string.Empty;
             SubmitAuthenticatedProfileServerRpc(profile.PlayerName, profile.GamesPlayed);
         }
 
         private void ClearLocalAuthenticatedProfile()
         {
-            // The next authenticated account publishes only after its own cloud profile is loaded.
-            // Existing remote snapshots are server-owned presentation cache and cannot authorize saves.
+            string clearedPlayerId = localAuthenticatedPlayerId;
+            localAuthenticatedPlayerId = string.Empty;
+            if (clearedPlayerId.Length == 0)
+            {
+                return;
+            }
+
+            authenticatedVisibleProfiles.Remove(clearedPlayerId);
+            RemoteProfileCleared?.Invoke(clearedPlayerId);
         }
 
         private bool TryAuthenticate(ulong senderClientId, out string playerId)

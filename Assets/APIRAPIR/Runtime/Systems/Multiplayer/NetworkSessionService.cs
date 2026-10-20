@@ -1,68 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
-using Unity.Services.Authentication;
-using Unity.Services.Core;
 using Unity.Services.Multiplayer;
 using UnityEngine;
 
 namespace ApirApir.Multiplayer
 {
-    /// <summary>
-    /// Shared initialization gate for every APIR APIR feature that uses Unity Authentication.
-    /// It preserves cached anonymous sessions and prevents concurrent sign-in attempts.
-    /// </summary>
-    public static class UnityAuthenticationSession
-    {
-        private static readonly SemaphoreSlim InitializationGate = new SemaphoreSlim(1, 1);
-
-        public static bool IsSignedIn =>
-            UnityServices.State == ServicesInitializationState.Initialized &&
-            AuthenticationService.Instance.IsSignedIn;
-
-        public static string PlayerId => IsSignedIn
-            ? AuthenticationService.Instance.PlayerId ?? string.Empty
-            : string.Empty;
-
-        public static async Task<string> EnsureSignedInAsync(
-            CancellationToken cancellationToken = default)
-        {
-            await InitializationGate.WaitAsync(cancellationToken);
-            try
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (UnityServices.State == ServicesInitializationState.Uninitialized)
-                {
-                    await UnityServices.InitializeAsync();
-                }
-
-                cancellationToken.ThrowIfCancellationRequested();
-                if (!AuthenticationService.Instance.IsSignedIn)
-                {
-                    await AuthenticationService.Instance.SignInAnonymouslyAsync();
-                }
-
-                cancellationToken.ThrowIfCancellationRequested();
-                string playerId = AuthenticationService.Instance.PlayerId;
-                if (string.IsNullOrWhiteSpace(playerId))
-                {
-                    throw new InvalidOperationException(
-                        "Unity Authentication completed without a valid Player ID.");
-                }
-
-                return playerId.Trim();
-            }
-            finally
-            {
-                InitializationGate.Release();
-            }
-        }
-    }
-
     /// <summary>
     /// Owns connection lifecycle, approval, lobby identity and ready state. Gameplay systems only consume
     /// its state/events and remain independent of LAN or Relay.
@@ -219,7 +165,7 @@ namespace ApirApir.Multiplayer
                 await EnsureUnityServicesAsync();
                 PrepareConnection(
                     MultiplayerConnectionMode.OnlineRelay,
-                    UnityAuthenticationSession.PlayerId);
+                    UnityAccountAuthenticationRuntime.PlayerId);
 
                 var options = new SessionOptions
                 {
@@ -265,7 +211,7 @@ namespace ApirApir.Multiplayer
                 await EnsureUnityServicesAsync();
                 PrepareConnection(
                     MultiplayerConnectionMode.OnlineRelay,
-                    UnityAuthenticationSession.PlayerId);
+                    UnityAccountAuthenticationRuntime.PlayerId);
                 onlineSession = await MultiplayerService.Instance.JoinSessionByCodeAsync(normalizedCode);
                 JoinCode = onlineSession.Code ?? normalizedCode;
                 NotifyChanged();
@@ -567,7 +513,15 @@ namespace ApirApir.Multiplayer
 
         private static async Task EnsureUnityServicesAsync()
         {
-            await UnityAuthenticationSession.EnsureSignedInAsync();
+            AccountAuthenticationResult authentication =
+                await UnityAccountAuthenticationRuntime.Service.RequireAuthenticatedAsync();
+            if (!authentication.Succeeded)
+            {
+                throw new InvalidOperationException(
+                    string.IsNullOrWhiteSpace(authentication.ErrorMessage)
+                        ? "Login or registration is required for online play."
+                        : authentication.ErrorMessage);
+            }
         }
 
         private void PublishSnapshot()

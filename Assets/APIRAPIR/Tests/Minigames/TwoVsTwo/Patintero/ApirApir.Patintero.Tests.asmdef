@@ -1,0 +1,20 @@
+{
+  "name": "ApirApir.Patintero.Tests",
+  "rootNamespace": "ApirApir.Patintero.Tests",
+  "references": [
+    "ApirApir.Patintero",
+    "ApirApir.Multiplayer",
+    "Unity.Netcode.Runtime",
+    "Unity.Networking.Transport",
+    "Unity.InputSystem"
+  ],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

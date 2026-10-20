@@ -45,7 +45,7 @@ namespace ApirApir.MatchFlowTests
                 .Single(value => value.MinigameId == DefaultMinigameCatalog.TaguTaguanId);
 
             Assert.That(patintero.Eligibility.Select(value => value.Format).Distinct(),
-                Is.EquivalentTo(new[] { MinigameFormat.OneVsThree, MinigameFormat.TwoVsTwo }));
+                Is.EqualTo(new[] { MinigameFormat.TwoVsTwo }));
             Assert.That(taguTaguan.Eligibility.Select(value => value.Format).Distinct(),
                 Is.EqualTo(new[] { MinigameFormat.OneVsThree }));
         }
@@ -84,20 +84,21 @@ namespace ApirApir.MatchFlowTests
         }
 
         [Test]
-        public void ThreeContendersAllowOnlyPatinteroOneVsThree()
+        public void ThreeContendersAllowOnlyTaguTaguanOneVsThree()
         {
             AuthoritativeMatchFlow flow = CreateFlow();
             Eliminate(flow, "D", "drop-d");
             AuthoritativeEventDirector director = CreateDirector(flow);
 
             Assert.That(director.GetEligibleMinigames().Select(game => game.MinigameId),
-                Is.EqualTo(new[] { DefaultMinigameCatalog.PatinteroId }));
+                Is.EqualTo(new[] { DefaultMinigameCatalog.TaguTaguanId }));
             Assert.That(director.TryCreateNextPlan("event", 1, out MinigameEventPlan plan).Succeeded, Is.True);
+            Assert.That(plan.MinigameId, Is.EqualTo(DefaultMinigameCatalog.TaguTaguanId));
             Assert.That(plan.Format, Is.EqualTo(MinigameFormat.OneVsThree));
         }
 
         [Test]
-        public void ThreeContenderPatinteroMakesEliminatedPlayerSoloGuard()
+        public void ThreeContenderTaguTaguanMakesEliminatedPlayerTaya()
         {
             AuthoritativeMatchFlow flow = CreateFlow();
             Eliminate(flow, "D", "drop-d");
@@ -105,11 +106,11 @@ namespace ApirApir.MatchFlowTests
 
             director.TryCreateNextPlan("event", 1, out MinigameEventPlan plan);
 
-            MinigameParticipantAssignment guard = plan.Assignments.Single(value =>
-                value.Role == MinigameParticipantRole.Guard);
-            Assert.That(guard.PlayerId, Is.EqualTo("D"));
-            Assert.That(guard.Membership, Is.EqualTo(ChampionshipMembership.EliminatedPlayer));
-            Assert.That(plan.Assignments.Where(value => value.Role == MinigameParticipantRole.Runner)
+            MinigameParticipantAssignment taya = plan.Assignments.Single(value =>
+                value.Role == MinigameParticipantRole.Taya);
+            Assert.That(taya.PlayerId, Is.EqualTo("D"));
+            Assert.That(taya.Membership, Is.EqualTo(ChampionshipMembership.EliminatedPlayer));
+            Assert.That(plan.Assignments.Where(value => value.Role == MinigameParticipantRole.Hider)
                 .All(value => value.Membership == ChampionshipMembership.ActiveContender), Is.True);
         }
 

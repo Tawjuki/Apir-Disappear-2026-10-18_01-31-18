@@ -395,9 +395,10 @@ namespace ApirApir.EventDirector
             {
                 MinigameFormat.OneVsThree =>
                     teamA == 3 && teamB == 1 &&
-                    ((activeCount == 4 && tayaCount == 1 && hiderCount == 3) ||
-                     (activeCount == 3 && activeA == 3 && activeB == 0 &&
-                      runnerCount == 3 && guardCount == 1)),
+                    tayaCount == 1 && hiderCount == 3 &&
+                    runnerCount == 0 && guardCount == 0 &&
+                    (activeCount == 4 ||
+                     (activeCount == 3 && activeA == 3 && activeB == 0)),
                 MinigameFormat.TwoVsTwo =>
                     teamA == 2 && teamB == 2 && runnerCount == 2 && guardCount == 2 &&
                     (activeCount == 4 || (activeCount == 2 && activeA == 1 && activeB == 1)),

@@ -318,9 +318,9 @@ namespace ApirApir.EventDirector
             if (format == MinigameFormat.OneVsThree)
             {
                 return OneVsThreeFormatRules.IsValidTeamShape(teamA, teamB) &&
-                       ((active == 4 && taya == 1 && hiders == 3) ||
-                        (active == 3 && activeA == 3 && activeB == 0 &&
-                         runners == 3 && guards == 1));
+                       taya == 1 && hiders == 3 && runners == 0 && guards == 0 &&
+                       (active == 4 ||
+                        (active == 3 && activeA == 3 && activeB == 0));
             }
 
             if (!TwoVsTwoFormatRules.IsValidTeamShape(teamA, teamB))

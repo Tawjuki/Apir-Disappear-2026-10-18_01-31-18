@@ -20,7 +20,6 @@ namespace ApirApir.EventDirector
                     new[]
                     {
                         new MinigameEligibilityDeclaration(4, MinigameFormat.TwoVsTwo),
-                        new MinigameEligibilityDeclaration(3, MinigameFormat.OneVsThree),
                         new MinigameEligibilityDeclaration(2, MinigameFormat.TwoVsTwo)
                     },
                     new PatinteroAssignmentPolicyAdapter()),
@@ -28,7 +27,8 @@ namespace ApirApir.EventDirector
                     TaguTaguanId,
                     new[]
                     {
-                        new MinigameEligibilityDeclaration(4, MinigameFormat.OneVsThree)
+                        new MinigameEligibilityDeclaration(4, MinigameFormat.OneVsThree),
+                        new MinigameEligibilityDeclaration(3, MinigameFormat.OneVsThree)
                     },
                     new TaguTaguanRoleAssignmentPolicy())
             };
@@ -100,9 +100,7 @@ namespace ApirApir.EventDirector
                 if (match.Participants[i].IsContender) active++;
             }
 
-            return (active == 4 && format == MinigameFormat.TwoVsTwo) ||
-                   (active == 3 && format == MinigameFormat.OneVsThree) ||
-                   (active == 2 && format == MinigameFormat.TwoVsTwo);
+            return (active == 4 || active == 2) && format == MinigameFormat.TwoVsTwo;
         }
     }
 }

@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System.IO;
+using ApirApir.Multiplayer;
 using ApirApir.Patintero;
 using Unity.Netcode;
 using Unity.Netcode.Components;
@@ -22,6 +23,10 @@ namespace ApirApir.Editor
         private const string NetworkPrefabsPath = Root + "/Config/PatinteroNetworkPrefabs.asset";
         private const string PlayerPrefabPath = Root + "/Prefabs/PatinteroPlayer.prefab";
         private const string ScenePath = "Assets/Scenes/PatinteroPrototype.unity";
+        private const string SessionServiceScriptPath =
+            "Assets/APIRAPIR/Runtime/Systems/Multiplayer/NetworkSessionService.cs";
+        private const string SessionUiScriptPath =
+            "Assets/APIRAPIR/Runtime/Systems/Multiplayer/NetworkSessionUI.cs";
 
         [MenuItem("Tools/APIR APIR/Build Patintero Prototype")]
         public static void BuildFromMenu() => BuildAll();
@@ -76,6 +81,12 @@ namespace ApirApir.Editor
 
         private static GameObject CreatePlayerPrefab()
         {
+            GameObject existing = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
+            if (existing != null)
+            {
+                return existing;
+            }
+
             GameObject root = new("PatinteroPlayer");
             root.layer = LayerMask.NameToLayer("Default");
             root.AddComponent<NetworkObject>();
@@ -156,8 +167,13 @@ namespace ApirApir.Editor
 
             GameObject gameObject = new("PatinteroGameManager");
             gameObject.AddComponent<NetworkObject>();
+            NetworkSessionService sessionService = AddScriptComponent<NetworkSessionService>(
+                gameObject,
+                SessionServiceScriptPath);
+            sessionService.ConfigureForEditor(networkManager, transport);
             PatinteroGameManager gameManager = gameObject.AddComponent<PatinteroGameManager>();
             gameManager.SetSettingsForEditor(settings);
+            gameManager.SetSessionServiceForEditor(sessionService);
             if (gameManager.Settings != settings)
             {
                 throw new InvalidDataException("The Patintero settings reference could not be assigned to the game manager.");
@@ -166,7 +182,7 @@ namespace ApirApir.Editor
             EditorUtility.SetDirty(gameManager);
             EditorUtility.SetDirty(networkManager);
 
-            CreateInterface();
+            CreateInterface(sessionService);
             EditorSceneManager.SaveScene(scene, ScenePath);
         }
 
@@ -230,7 +246,7 @@ namespace ApirApir.Editor
             lightObject.transform.rotation = Quaternion.Euler(48f, -30f, 0f);
         }
 
-        private static void CreateInterface()
+        private static void CreateInterface(NetworkSessionService sessionService)
         {
             Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             GameObject canvasObject = new("PatinteroHUD");
@@ -242,21 +258,40 @@ namespace ApirApir.Editor
             canvasObject.AddComponent<GraphicRaycaster>();
 
             GameObject connectionPanel = CreatePanel("ConnectionPanel", canvasObject.transform,
-                new Vector2(12f, -12f), new Vector2(430f, 166f), new Vector2(0f, 1f), new Vector2(0f, 1f));
+                new Vector2(12f, -12f), new Vector2(470f, 300f), new Vector2(0f, 1f), new Vector2(0f, 1f));
             Text title = CreateText("Title", connectionPanel.transform, "APIR APIR - PATINTERO", font, 24,
-                TextAnchor.MiddleLeft, new Vector2(14f, -10f), new Vector2(400f, 34f), new Vector2(0f, 1f), new Vector2(0f, 1f));
+                TextAnchor.MiddleLeft, new Vector2(14f, -10f), new Vector2(440f, 34f), new Vector2(0f, 1f), new Vector2(0f, 1f));
             InputField address = CreateInput("Address", connectionPanel.transform, "127.0.0.1", font,
                 new Vector2(14f, -52f), new Vector2(238f, 34f));
             InputField port = CreateInput("Port", connectionPanel.transform, "7777", font,
                 new Vector2(260f, -52f), new Vector2(76f, 34f));
-            Button host = CreateButton("HostButton", connectionPanel.transform, "HOST", font,
-                new Vector2(14f, -94f), new Vector2(94f, 34f));
-            Button join = CreateButton("JoinButton", connectionPanel.transform, "JOIN", font,
-                new Vector2(116f, -94f), new Vector2(94f, 34f));
-            Button disconnect = CreateButton("DisconnectButton", connectionPanel.transform, "DISCONNECT", font,
-                new Vector2(218f, -94f), new Vector2(118f, 34f));
-            Text connection = CreateText("ConnectionStatus", connectionPanel.transform, "Offline - host or join a LAN game",
-                font, 16, TextAnchor.MiddleLeft, new Vector2(14f, -132f), new Vector2(400f, 26f),
+            Button host = CreateButton("HostLanButton", connectionPanel.transform, "HOST LAN", font,
+                new Vector2(344f, -52f), new Vector2(108f, 34f));
+            Button join = CreateButton("JoinLanButton", connectionPanel.transform, "JOIN LAN", font,
+                new Vector2(344f, -92f), new Vector2(108f, 34f));
+            InputField joinCodeInput = CreateInput("JoinCode", connectionPanel.transform, string.Empty, font,
+                new Vector2(14f, -100f), new Vector2(150f, 34f));
+            Button createOnline = CreateButton("CreateOnlineButton", connectionPanel.transform, "CREATE ONLINE", font,
+                new Vector2(172f, -100f), new Vector2(152f, 34f));
+            Button joinOnline = CreateButton("JoinOnlineButton", connectionPanel.transform, "JOIN CODE", font,
+                new Vector2(332f, -132f), new Vector2(120f, 34f));
+            Button readyButton = CreateButton("ReadyButton", connectionPanel.transform, "READY", font,
+                new Vector2(14f, -144f), new Vector2(100f, 34f));
+            Button startButton = CreateButton("StartMatchButton", connectionPanel.transform, "START", font,
+                new Vector2(122f, -144f), new Vector2(100f, 34f));
+            Button leaveButton = CreateButton("LeaveButton", connectionPanel.transform, "LEAVE", font,
+                new Vector2(230f, -144f), new Vector2(94f, 34f));
+            Text joinCode = CreateText("DisplayedJoinCode", connectionPanel.transform, "Join code: --",
+                font, 16, TextAnchor.MiddleLeft, new Vector2(14f, -184f), new Vector2(220f, 24f),
+                new Vector2(0f, 1f), new Vector2(0f, 1f));
+            Text playerCount = CreateText("PlayerCount", connectionPanel.transform, "Players: 0/4",
+                font, 16, TextAnchor.MiddleLeft, new Vector2(244f, -184f), new Vector2(200f, 24f),
+                new Vector2(0f, 1f), new Vector2(0f, 1f));
+            Text readyStatus = CreateText("ReadyStatus", connectionPanel.transform, "Ready: --",
+                font, 16, TextAnchor.MiddleLeft, new Vector2(14f, -214f), new Vector2(200f, 24f),
+                new Vector2(0f, 1f), new Vector2(0f, 1f));
+            Text connection = CreateText("ConnectionStatus", connectionPanel.transform, "Offline - host or join a game",
+                font, 15, TextAnchor.MiddleLeft, new Vector2(14f, -246f), new Vector2(440f, 42f),
                 new Vector2(0f, 1f), new Vector2(0f, 1f));
 
             GameObject statusPanel = CreatePanel("StatusPanel", canvasObject.transform,
@@ -274,20 +309,14 @@ namespace ApirApir.Editor
                 new Vector2(-350f, 48f), new Vector2(700f, 76f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f));
             result.color = new Color(1f, 0.86f, 0.2f);
 
+            NetworkSessionUI sessionUi = AddScriptComponent<NetworkSessionUI>(
+                canvasObject,
+                SessionUiScriptPath);
+            sessionUi.ConfigureForEditor(sessionService, address, port, host, join, joinCodeInput, createOnline,
+                joinOnline, readyButton, startButton, leaveButton, connection, joinCode, playerCount, readyStatus);
+
             PatinteroNetworkUI ui = canvasObject.AddComponent<PatinteroNetworkUI>();
-            SerializedObject serialized = new(ui);
-            SetReference(serialized, "addressInput", address);
-            SetReference(serialized, "portInput", port);
-            SetReference(serialized, "hostButton", host);
-            SetReference(serialized, "joinButton", join);
-            SetReference(serialized, "disconnectButton", disconnect);
-            SetReference(serialized, "restartButton", restart);
-            SetReference(serialized, "connectionText", connection);
-            SetReference(serialized, "timerText", timer);
-            SetReference(serialized, "roleText", role);
-            SetReference(serialized, "roundText", round);
-            SetReference(serialized, "resultText", result);
-            serialized.ApplyModifiedPropertiesWithoutUndo();
+            ui.ConfigureForEditor(restart, timer, role, round, result);
 
             GameObject eventSystem = new("EventSystem");
             eventSystem.AddComponent<EventSystem>();
@@ -297,6 +326,35 @@ namespace ApirApir.Editor
         private static void SetReference(SerializedObject serialized, string property, Object value)
         {
             serialized.FindProperty(property).objectReferenceValue = value;
+        }
+
+        private static T AddScriptComponent<T>(GameObject target, string scriptPath) where T : MonoBehaviour
+        {
+            MonoScript script = AssetDatabase.LoadAssetAtPath<MonoScript>(scriptPath);
+            if (script == null)
+            {
+                throw new InvalidDataException($"Could not resolve {typeof(T).Name} at {scriptPath}.");
+            }
+
+            System.Type resolvedClass = script.GetClass();
+            if (resolvedClass != null && resolvedClass != typeof(T))
+            {
+                throw new InvalidDataException(
+                    $"The script at {scriptPath} resolves to {resolvedClass.FullName}, not {typeof(T).FullName}.");
+            }
+
+            T component = target.AddComponent<T>();
+            var serialized = new SerializedObject(component);
+            SerializedProperty scriptProperty = serialized.FindProperty("m_Script");
+            if (scriptProperty == null)
+            {
+                Object.DestroyImmediate(component);
+                throw new InvalidDataException($"Could not bind the generated {typeof(T).Name} component.");
+            }
+
+            scriptProperty.objectReferenceValue = script;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return component;
         }
 
         private static GameObject CreatePanel(string name, Transform parent, Vector2 position, Vector2 size,

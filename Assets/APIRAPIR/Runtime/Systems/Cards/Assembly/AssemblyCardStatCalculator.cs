@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ApirApir.Battle;
 using ApirApir.Crafting;
 
 namespace ApirApir.Cards
@@ -13,8 +14,11 @@ namespace ApirApir.Cards
             IReadOnlyList<OwnedCardPart> equippedParts,
             ISet<string> retainedHitPointInstances = null)
         {
-            int hitPoints = BlankCardHitPoints;
+            int flatHitPoints = 0;
+            float hitPointBonus = 0f;
             float attackBonus = 0f;
+            float speedBonus = 0f;
+            float criticalBonus = 0f;
             var modifiers = new Dictionary<string, float>(StringComparer.Ordinal);
             var passives = new List<string>();
 
@@ -32,7 +36,8 @@ namespace ApirApir.Cards
                     if (functional ||
                         (retainedHitPointInstances != null && retainedHitPointInstances.Contains(part.InstanceId)))
                     {
-                        hitPoints += part.Definition.HitPointContribution;
+                        flatHitPoints += part.Definition.HitPointContribution;
+                        hitPointBonus += part.Definition.HitPointBonusPercent;
                     }
 
                     if (!functional)
@@ -41,6 +46,8 @@ namespace ApirApir.Cards
                     }
 
                     attackBonus += part.Definition.AttackBonusPercent;
+                    speedBonus += part.Definition.SpeedBonusPercent;
+                    criticalBonus += part.Definition.CriticalChanceBonusPercent;
                     foreach (KeyValuePair<string, float> modifier in part.Definition.AdditionalStatModifiers)
                     {
                         modifiers.TryGetValue(modifier.Key, out float current);
@@ -57,12 +64,16 @@ namespace ApirApir.Cards
             int effectiveAttack = Math.Max(0, (int)Math.Round(
                 BlankCardAttack * (1m + (decimal)attackBonus / 100m),
                 MidpointRounding.AwayFromZero));
+            int hitPoints = CardHitPointCalculator.Calculate(
+                BlankCardHitPoints, flatHitPoints, hitPointBonus);
             return new CardEffectiveStats(
-                Math.Max(1, hitPoints),
+                hitPoints,
                 effectiveAttack,
                 attackBonus,
                 modifiers,
-                passives.AsReadOnly());
+                passives.AsReadOnly(),
+                speedBonus,
+                criticalBonus);
         }
     }
 }

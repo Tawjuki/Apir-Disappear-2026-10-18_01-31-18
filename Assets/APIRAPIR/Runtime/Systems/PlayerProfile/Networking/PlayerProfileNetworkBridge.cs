@@ -22,6 +22,10 @@ namespace ApirApir.PlayerProfiles
 
         private PlayerProfileService service;
         private IPlayerProfileConnectionResolver connectionResolver;
+        private CloudPlayerProfileCoordinator authenticatedProfileCoordinator;
+        private readonly Dictionary<string, PlayerProfileSnapshot> authenticatedVisibleProfiles =
+            new Dictionary<string, PlayerProfileSnapshot>(StringComparer.Ordinal);
+        private readonly PlayerNamePolicy playerNamePolicy = new PlayerNamePolicy();
         private bool subscribed;
 
         public event Action<PlayerProfileSnapshot> RemoteProfileReceived;
@@ -36,10 +40,44 @@ namespace ApirApir.PlayerProfiles
             SubscribeIfServer();
         }
 
+        /// <summary>
+        /// Binds the local authenticated account for public lobby presentation. The RPC sends no
+        /// Player ID and never writes Cloud Save; the server associates the snapshot with the
+        /// connection resolver's identity. This is not used as authorization for account changes.
+        /// </summary>
+        public void BindAuthenticatedProfile(CloudPlayerProfileCoordinator coordinator)
+        {
+            UnbindAuthenticatedProfile();
+            authenticatedProfileCoordinator = coordinator ??
+                throw new ArgumentNullException(nameof(coordinator));
+            authenticatedProfileCoordinator.ProfileReady += ForwardLocalAuthenticatedProfile;
+            authenticatedProfileCoordinator.ProfileCleared += ClearLocalAuthenticatedProfile;
+            if (IsSpawned && authenticatedProfileCoordinator.IsReady)
+            {
+                ForwardLocalAuthenticatedProfile(authenticatedProfileCoordinator.CurrentProfile);
+            }
+        }
+
+        public void UnbindAuthenticatedProfile()
+        {
+            if (authenticatedProfileCoordinator == null)
+            {
+                return;
+            }
+
+            authenticatedProfileCoordinator.ProfileReady -= ForwardLocalAuthenticatedProfile;
+            authenticatedProfileCoordinator.ProfileCleared -= ClearLocalAuthenticatedProfile;
+            authenticatedProfileCoordinator = null;
+        }
+
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
             SubscribeIfServer();
+            if (authenticatedProfileCoordinator != null && authenticatedProfileCoordinator.IsReady)
+            {
+                ForwardLocalAuthenticatedProfile(authenticatedProfileCoordinator.CurrentProfile);
+            }
         }
 
         public override void OnNetworkDespawn()
@@ -60,7 +98,56 @@ namespace ApirApir.PlayerProfiles
                 return;
             }
 
+            if (authenticatedVisibleProfiles.ContainsKey(playerId))
+            {
+                return;
+            }
+
             service.TryUpdatePlayerName(playerId, playerId, requestedName);
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+        public void SubmitAuthenticatedProfileServerRpc(
+            string playerName,
+            int gamesPlayed,
+            RpcParams rpcParams = default)
+        {
+            if (gamesPlayed < 0 ||
+                !playerNamePolicy.TryNormalize(playerName, out string normalizedName) ||
+                !string.Equals(playerName, normalizedName, StringComparison.Ordinal) ||
+                !TryAuthenticate(rpcParams.Receive.SenderClientId, out string playerId))
+            {
+                return;
+            }
+
+            var snapshot = new PlayerProfileSnapshot(
+                playerId,
+                normalizedName,
+                string.Empty,
+                gamesPlayed,
+                0,
+                0);
+            if (authenticatedVisibleProfiles.TryGetValue(playerId, out PlayerProfileSnapshot existing) &&
+                existing.PlayerName == snapshot.PlayerName &&
+                existing.GamesPlayed == snapshot.GamesPlayed)
+            {
+                return;
+            }
+
+            authenticatedVisibleProfiles[playerId] = snapshot;
+            IReadOnlyList<ulong> clients = connectionResolver.GetConnectedClientIds();
+            if (clients == null || clients.Count == 0)
+            {
+                return;
+            }
+
+            var targets = new ulong[clients.Count];
+            for (int i = 0; i < clients.Count; i++)
+            {
+                targets[i] = clients[i];
+            }
+
+            SendProfile(snapshot, targets);
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -107,13 +194,37 @@ namespace ApirApir.PlayerProfiles
             var sentPlayerIds = new HashSet<string>(StringComparer.Ordinal);
             for (int i = 0; i < connectedClients.Count; i++)
             {
-                if (connectionResolver.TryGetPlayerId(connectedClients[i], out string playerId) &&
-                    sentPlayerIds.Add(playerId) &&
-                    service.TryGetProfile(playerId, out PlayerProfileSnapshot profile))
+                if (!connectionResolver.TryGetPlayerId(connectedClients[i], out string playerId) ||
+                    !sentPlayerIds.Add(playerId))
                 {
-                    SendProfile(profile, new[] { targetClientId });
+                    continue;
+                }
+
+                if (authenticatedVisibleProfiles.TryGetValue(playerId, out PlayerProfileSnapshot cloudProfile))
+                {
+                    SendProfile(cloudProfile, new[] { targetClientId });
+                }
+                else if (service.TryGetProfile(playerId, out PlayerProfileSnapshot localProfile))
+                {
+                    SendProfile(localProfile, new[] { targetClientId });
                 }
             }
+        }
+
+        private void ForwardLocalAuthenticatedProfile(PlayerProfileSnapshot profile)
+        {
+            if (!IsSpawned || profile == null)
+            {
+                return;
+            }
+
+            SubmitAuthenticatedProfileServerRpc(profile.PlayerName, profile.GamesPlayed);
+        }
+
+        private void ClearLocalAuthenticatedProfile()
+        {
+            // The next authenticated account publishes only after its own cloud profile is loaded.
+            // Existing remote snapshots are server-owned presentation cache and cannot authorize saves.
         }
 
         private bool TryAuthenticate(ulong senderClientId, out string playerId)

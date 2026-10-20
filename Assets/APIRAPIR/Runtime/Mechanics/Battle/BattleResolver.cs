@@ -11,6 +11,7 @@ namespace ApirApir.Battle
         private readonly SkillCooldownSystem cooldownSystem;
         private readonly StatusEffectSystem statusSystem;
         private readonly CombatModifierCalculator modifiers;
+        private readonly PartPassiveRuntimeSystem passives;
         private readonly BattleSettings settings;
         private readonly IRandomNumberProvider random;
         private readonly Action<BattleEvent> publish;
@@ -23,6 +24,7 @@ namespace ApirApir.Battle
             SkillCooldownSystem cooldownSystem,
             StatusEffectSystem statusSystem,
             CombatModifierCalculator modifiers,
+            PartPassiveRuntimeSystem passives,
             BattleSettings settings,
             IRandomNumberProvider random,
             Action<BattleEvent> publish)
@@ -33,6 +35,7 @@ namespace ApirApir.Battle
             this.cooldownSystem = cooldownSystem ?? throw new ArgumentNullException(nameof(cooldownSystem));
             this.statusSystem = statusSystem ?? throw new ArgumentNullException(nameof(statusSystem));
             this.modifiers = modifiers ?? throw new ArgumentNullException(nameof(modifiers));
+            this.passives = passives ?? throw new ArgumentNullException(nameof(passives));
             this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
             this.random = random ?? throw new ArgumentNullException(nameof(random));
             this.publish = publish ?? throw new ArgumentNullException(nameof(publish));
@@ -246,10 +249,25 @@ namespace ApirApir.Battle
             CardCombatState target,
             string statusId)
         {
-            if (statusSystem.TryApply(target, statusId, out int duration))
+            if (statusSystem.TryApply(target, statusId, out int duration, out bool blockedByImmunity))
             {
                 Publish(BattleEventType.StatusEffectApplied, source.PlayerId, target.PlayerId,
                     statusId, duration);
+                if (!ReferenceEquals(source, target) &&
+                    statusSystem.Catalog.TryGet(statusId, out StatusEffectDefinition definition) &&
+                    definition.Polarity == StatusPolarity.Negative)
+                {
+                    int healing = passives.ConsumeNegativeStatusHealing(source);
+                    if (healing > 0)
+                    {
+                        Heal(source, healing);
+                    }
+                }
+            }
+            else if (blockedByImmunity)
+            {
+                Publish(BattleEventType.StatusApplicationBlockedByImmunity,
+                    source.PlayerId, target.PlayerId, statusId);
             }
             else
             {
@@ -272,10 +290,15 @@ namespace ApirApir.Battle
             if (random.NextUnit() < modifiers.GetDodgeChance(target))
             {
                 Publish(BattleEventType.AttackDodged, source.PlayerId, target.PlayerId, skill.Id);
+                if (passives.TryConsumeDodgeStatus(target, out string dodgeStatusId))
+                {
+                    ApplyRegisteredStatus(target, target, dodgeStatusId);
+                }
                 return false;
             }
 
             bool critical = random.NextUnit() < modifiers.GetCriticalChance(source);
+            int flatDamageBonus = passives.PrepareFlatDamageBonus(source, target);
             float incomingMultiplier = modifiers.GetIncomingDamageMultiplier(target);
             if (statusSystem.TryConsumeNextHitAmplifier(
                     target, out float nextHitMultiplier, out string consumedStatus))
@@ -287,22 +310,41 @@ namespace ApirApir.Battle
 
             int calculated = damageCalculator.CalculateWithModifiers(
                 source, target, skill, skillPower, modifiers.GetAttackModifierPercent(source),
-                incomingMultiplier, critical, settings.CriticalDamageMultiplier);
+                incomingMultiplier, critical, settings.CriticalDamageMultiplier, flatDamageBonus);
             int applied = target.ApplyDamage(calculated);
             if (applied <= 0)
             {
+                passives.CompleteFlatDamage(source, false);
                 return false;
             }
 
             target.ReceivedDirectDamageThisExchange = true;
+            passives.CompleteFlatDamage(source, true);
             Publish(BattleEventType.DirectHit, source.PlayerId, target.PlayerId, skill.Id, applied);
             if (critical)
             {
                 Publish(BattleEventType.CriticalHit, source.PlayerId, target.PlayerId, skill.Id, applied);
+                int criticalHealing = passives.ConsumeCriticalHealing(source);
+                if (criticalHealing > 0)
+                {
+                    Heal(source, criticalHealing);
+                }
             }
 
             PublishDamage(source, target, skill.Id, applied);
             ProcessMaintenance(source, target);
+            if (!target.IsDefeated)
+            {
+                if (passives.TryConsumeDirectDamageStatus(target, out string damageStatusId))
+                {
+                    ApplyRegisteredStatus(target, target, damageStatusId);
+                }
+
+                if (passives.TryConsumeHitPointThreshold(target, out string thresholdStatusId))
+                {
+                    ApplyRegisteredStatus(target, target, thresholdStatusId);
+                }
+            }
             PublishDefeatIfNeeded(source, target);
             return true;
         }

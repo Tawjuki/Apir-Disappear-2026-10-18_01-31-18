@@ -57,6 +57,7 @@ namespace ApirApir.Battle
             StatusEffectCatalog registeredStatuses = statusCatalog ??
                 StatusEffectCatalog.CreateDefault(settings.SunogDamagePerExchange);
             var modifiers = new CombatModifierCalculator(registeredStatuses, settings);
+            var passiveRuntime = new PartPassiveRuntimeSystem(registeredStatuses);
             resolver = new BattleResolver(
                 State,
                 damageCalculator,
@@ -65,8 +66,10 @@ namespace ApirApir.Battle
                 new StatusEffectSystem(
                     registeredStatuses,
                     settings.StatusReapplicationPolicy,
-                    random),
+                    random,
+                    passiveRuntime),
                 modifiers,
+                passiveRuntime,
                 settings,
                 random,
                 Publish);

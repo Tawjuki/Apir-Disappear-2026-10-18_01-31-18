@@ -9,9 +9,6 @@ namespace ApirApir.PlayerProfiles
     /// </summary>
     public sealed class PlayerStatisticsService : IDisposable
     {
-        private const int PlayerCountPerMatch = 4;
-        private const int MaximumMatchIdLength = 128;
-
         private readonly PlayerProfileService profiles;
         private readonly IPlayerProfileAuthority authority;
         private ICompletedMatchResultSource source;
@@ -60,7 +57,8 @@ namespace ApirApir.PlayerProfiles
             {
                 status = StatisticsProcessStatus.IncompleteMatch;
             }
-            else if (!TryValidate(result, out IReadOnlyList<PlayerFinalPlacement> placements))
+            else if (!CompletedMatchPolicy.TryValidate(
+                         result, out IReadOnlyList<PlayerFinalPlacement> placements))
             {
                 status = StatisticsProcessStatus.InvalidResult;
             }
@@ -87,45 +85,5 @@ namespace ApirApir.PlayerProfiles
             ProcessCompletedMatch(result);
         }
 
-        private static bool TryValidate(
-            CompletedMatchResult result,
-            out IReadOnlyList<PlayerFinalPlacement> placements)
-        {
-            placements = null;
-            string matchId = result.MatchId == null ? string.Empty : result.MatchId.Trim();
-            if (matchId.Length == 0 || matchId.Length > MaximumMatchIdLength ||
-                result.Placements == null || result.Placements.Count != PlayerCountPerMatch)
-            {
-                return false;
-            }
-
-            var playerIds = new HashSet<string>(StringComparer.Ordinal);
-            var finalPlaces = new HashSet<FinalMatchPlacement>();
-            var normalized = new List<PlayerFinalPlacement>(PlayerCountPerMatch);
-            for (int i = 0; i < result.Placements.Count; i++)
-            {
-                PlayerFinalPlacement placement = result.Placements[i];
-                string playerId = placement.PlayerId == null ? string.Empty : placement.PlayerId.Trim();
-                if (playerId.Length == 0 || !Enum.IsDefined(typeof(FinalMatchPlacement), placement.Placement) ||
-                    !playerIds.Add(playerId) || !finalPlaces.Add(placement.Placement))
-                {
-                    return false;
-                }
-
-                normalized.Add(new PlayerFinalPlacement(playerId, placement.Placement));
-            }
-
-            if (finalPlaces.Count != PlayerCountPerMatch ||
-                !finalPlaces.Contains(FinalMatchPlacement.First) ||
-                !finalPlaces.Contains(FinalMatchPlacement.Second) ||
-                !finalPlaces.Contains(FinalMatchPlacement.Third) ||
-                !finalPlaces.Contains(FinalMatchPlacement.Fourth))
-            {
-                return false;
-            }
-
-            placements = normalized;
-            return true;
-        }
     }
 }

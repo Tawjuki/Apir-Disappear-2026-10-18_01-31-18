@@ -323,6 +323,24 @@ namespace ApirApir.Tests.PlayerProfiles
         }
 
         [Test]
+        public void AuthenticatedProfileSubmission_DoesNotAcceptAClaimedPlayerId()
+        {
+            MethodInfo rpc = typeof(PlayerProfileNetworkBridge).GetMethod(
+                "SubmitAuthenticatedProfileServerRpc",
+                BindingFlags.Instance | BindingFlags.Public);
+
+            ParameterInfo[] parameters = rpc.GetParameters();
+
+            Assert.That(parameters.Select(parameter => parameter.ParameterType), Is.EqualTo(new[]
+            {
+                typeof(string), typeof(int), typeof(RpcParams)
+            }));
+            Assert.That(parameters.Any(parameter =>
+                string.Equals(parameter.Name, "playerId", StringComparison.OrdinalIgnoreCase)),
+                Is.False);
+        }
+
+        [Test]
         public void CharacterPreviewChange_DoesNotModifyGameplayCharacterAndRestoresOldPreview()
         {
             var host = new GameObject("Preview Controller");

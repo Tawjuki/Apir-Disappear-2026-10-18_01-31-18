@@ -23,7 +23,7 @@ namespace ApirApir.CardTests
         }
 
         [Test]
-        public void CatalogUsesEstablishedMaintenanceCapsAndNoInventedBonuses()
+        public void CatalogUsesEstablishedMaintenanceCapsAndAuthoritativeBonuses()
         {
             CraftingCatalog catalog = DefaultCraftingCatalog.Create();
 
@@ -34,7 +34,11 @@ namespace ApirApir.CardTests
             Assert.That(catalog.Parts.Values.Where(value => value.Rarity == PartRarity.Epic)
                 .All(value => value.MaximumMaintenance == 10), Is.True);
             Assert.That(catalog.Parts.Values.All(value => value.HitPointContribution == 0 &&
-                value.AttackBonusPercent == 0f && value.PassiveAbilityReferences.Count == 0), Is.True);
+                value.HitPointBonusPercent > 0f && value.AttackBonusPercent > 0f), Is.True);
+            Assert.That(catalog.Parts.Values.Where(value => value.Rarity == PartRarity.Common)
+                .All(value => value.PassiveAbilityReferences.Count == 0), Is.True);
+            Assert.That(catalog.Parts["part_epic_mayari_head"].PassiveAbilityReferences.Count,
+                Is.EqualTo(2));
         }
 
         [Test]
@@ -49,6 +53,39 @@ namespace ApirApir.CardTests
             Assert.That(snapshot.Head.IsEmpty && snapshot.Body.IsEmpty && snapshot.Legs.IsEmpty, Is.True);
             Assert.That(context.Service.TryGetLoadout("alice", "card", out CardBattleLoadout loadout), Is.True);
             Assert.That(loadout.Parts, Is.Empty);
+        }
+
+        [Test]
+        public void PercentageHitPoints_MatchBetweenAssemblyAndBattle()
+        {
+            CraftingCatalog catalog = DefaultCraftingCatalog.Create();
+            var owned = new[]
+            {
+                new OwnedCardPart("h", "alice", catalog.Parts["part_epic_bakunawa_head"]),
+                new OwnedCardPart("b", "alice", catalog.Parts["part_epic_bakunawa_body"]),
+                new OwnedCardPart("l", "alice", catalog.Parts["part_epic_bakunawa_legs"])
+            };
+            CardEffectiveStats assembly = new AssemblyCardStatCalculator().Calculate(owned);
+            var loadout = new CardBattleLoadout(
+                "alice",
+                "card",
+                owned.Select(value => value.ToBattlePart()).ToArray(),
+                Array.Empty<SkillDefinition>());
+            var opponent = new CardBattleLoadout(
+                "bob", "other", null, Array.Empty<SkillDefinition>());
+            var battle = new BattleController(
+                "battle",
+                loadout,
+                opponent,
+                new BattleSettings(),
+                new FixedBattleAuthority(true),
+                new SystemRandomNumberProvider(1));
+
+            Assert.That(assembly.MaximumHitPoints, Is.EqualTo(285));
+            Assert.That(battle.State.Fighters["alice"].MaximumHitPoints, Is.EqualTo(285));
+            Assert.That(assembly.AttackBonusPercent, Is.EqualTo(124f));
+            Assert.That(assembly.SpeedBonusPercent, Is.EqualTo(15f));
+            Assert.That(assembly.CriticalChanceBonusPercent, Is.EqualTo(10f));
         }
 
         [TestCase(PartSlot.Head)]

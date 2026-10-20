@@ -46,7 +46,9 @@ namespace ApirApir.Cards
             int effectiveAttack,
             float attackBonusPercent,
             IReadOnlyDictionary<string, float> additionalModifiers,
-            IReadOnlyList<string> activePassiveReferences)
+            IReadOnlyList<string> activePassiveReferences,
+            float speedBonusPercent = 0f,
+            float criticalChanceBonusPercent = 0f)
         {
             MaximumHitPoints = maximumHitPoints;
             EffectiveAttack = effectiveAttack;
@@ -54,6 +56,8 @@ namespace ApirApir.Cards
             AdditionalModifiers = additionalModifiers ??
                                   new Dictionary<string, float>(StringComparer.Ordinal);
             ActivePassiveReferences = activePassiveReferences ?? Array.Empty<string>();
+            SpeedBonusPercent = speedBonusPercent;
+            CriticalChanceBonusPercent = criticalChanceBonusPercent;
         }
 
         public int MaximumHitPoints { get; }
@@ -61,6 +65,8 @@ namespace ApirApir.Cards
         public float AttackBonusPercent { get; }
         public IReadOnlyDictionary<string, float> AdditionalModifiers { get; }
         public IReadOnlyList<string> ActivePassiveReferences { get; }
+        public float SpeedBonusPercent { get; }
+        public float CriticalChanceBonusPercent { get; }
     }
 
     public sealed class CardPartSlotSnapshot

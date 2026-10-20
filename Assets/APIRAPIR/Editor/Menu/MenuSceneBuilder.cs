@@ -138,8 +138,8 @@ namespace ApirApir.Menu.Editor
             serialized.FindProperty("playerCount").objectReferenceValue = entry.transform.Find("PlayerCount").GetComponent<TMP_Text>();
             serialized.FindProperty("joinButton").objectReferenceValue = join.GetComponent<Button>();
             serialized.ApplyModifiedPropertiesWithoutUndo();
-            const string folder = "Assets/APIRAPIR/Menu/Prefabs";
-            EnsureFolder("Assets/APIRAPIR/Menu");
+            const string folder = "Assets/APIRAPIR/Runtime/Systems/Menu/Prefabs";
+            EnsureFolder("Assets/APIRAPIR/Runtime/Systems/Menu");
             EnsureFolder(folder);
             LobbyEntryView prefab = PrefabUtility.SaveAsPrefabAsset(entry, folder + "/LobbyEntry.prefab").GetComponent<LobbyEntryView>();
             Object.DestroyImmediate(entry);
@@ -184,7 +184,7 @@ namespace ApirApir.Menu.Editor
             tmp.fontSize = size;
             tmp.color = color;
             tmp.alignment = TextAlignmentOptions.Center;
-            tmp.enableWordWrapping = true;
+            tmp.textWrappingMode = TextWrappingModes.Normal;
             if (dimensions == Vector2.zero) Full(text);
             else Set(text, anchor, dimensions);
             return text;

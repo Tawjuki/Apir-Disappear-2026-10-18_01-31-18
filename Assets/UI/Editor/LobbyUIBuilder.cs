@@ -67,6 +67,7 @@ namespace ApirApir.UI.Editor
             var btnCraftGO = CreateButton("BtnCrafting", "Crafting", navBar.transform, new Color(1f, 0.85f, 0.2f), 22, 200);
             var btnShopGO  = CreateButton("BtnShop",     "Tyangge / Shop", navBar.transform, new Color(0.7f, 0.7f, 0.7f), 22, 220);
             var btnSkillGO = CreateButton("BtnSkill",    "Souls & Skills", navBar.transform, new Color(0.7f, 0.7f, 0.7f), 22, 220);
+            var btnCardBuilderGO = CreateButton("BtnCardBuilder", "Card Builder", navBar.transform, new Color(0.7f, 0.7f, 0.7f), 22, 220);
 
             // 4. Content Area (stretches below navbar)
             var contentArea = CreateUIObject("ContentArea", safeArea.transform);
@@ -494,13 +495,20 @@ namespace ApirApir.UI.Editor
             soulSkillView.detailModal = modalComp;
             modalRoot.SetActive(false);
 
+            // Reusable modular card-building panel.
+            CardBuilderLobbyInstaller.CreateOrUpdatePrefabs();
+            var cardBuilderPanel = CardBuilderLobbyInstaller.InstantiatePanel(contentArea.transform);
+            cardBuilderPanel.SetActive(false);
+
             // Wire Navigator
             navigator.craftingPanel = craftPanel;
             navigator.shopPanel = shopPanel;
             navigator.skillPanel = skillPanel;
+            navigator.cardBuilderPanel = cardBuilderPanel;
             navigator.btnCrafting = btnCraftGO.GetComponent<Button>();
             navigator.btnShop = btnShopGO.GetComponent<Button>();
             navigator.btnSkill = btnSkillGO.GetComponent<Button>();
+            navigator.btnCardBuilder = btnCardBuilderGO.GetComponent<Button>();
 
             // Save Scene
             UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(

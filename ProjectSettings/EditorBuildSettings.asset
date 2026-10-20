@@ -6,8 +6,11 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/PatinteroPrototype.unity
-    guid: ff30e8b6f31c0d04ea901aad7da9d904
+    path: Assets/Scenes/Menu.unity
+    guid: 1214db3d7bfe50448a0559c00efc5a26
+  - enabled: 1
+    path: Assets/Scenes/Lobby.unity
+    guid: 9022d789ccfa52e4e9c54c2ce5764a08
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

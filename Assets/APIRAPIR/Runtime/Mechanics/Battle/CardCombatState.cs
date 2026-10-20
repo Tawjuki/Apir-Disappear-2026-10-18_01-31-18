@@ -1,8 +1,48 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace ApirApir.Battle
 {
+    internal readonly struct PassiveUsageKey : IEquatable<PassiveUsageKey>
+    {
+        public PassiveUsageKey(PartCombatState part, PartPassiveDefinition passive)
+        {
+            Part = part;
+            Passive = passive;
+        }
+
+        public PartCombatState Part { get; }
+        public PartPassiveDefinition Passive { get; }
+
+        public bool Equals(PassiveUsageKey other) =>
+            ReferenceEquals(Part, other.Part) && ReferenceEquals(Passive, other.Passive);
+
+        public override bool Equals(object obj) => obj is PassiveUsageKey other && Equals(other);
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return (RuntimeHelpers.GetHashCode(Part) * 397) ^ RuntimeHelpers.GetHashCode(Passive);
+            }
+        }
+    }
+
+    internal readonly struct PendingPassiveTrigger
+    {
+        public PendingPassiveTrigger(PassiveUsageKey key, bool oncePerExchange, bool oncePerDuel)
+        {
+            Key = key;
+            OncePerExchange = oncePerExchange;
+            OncePerDuel = oncePerDuel;
+        }
+
+        public PassiveUsageKey Key { get; }
+        public bool OncePerExchange { get; }
+        public bool OncePerDuel { get; }
+    }
+
     public sealed class PartCombatState
     {
         internal PartCombatState(EquippedPart equippedPart)
@@ -47,6 +87,9 @@ namespace ApirApir.Battle
         private readonly Dictionary<string, int> cooldowns;
         private readonly Dictionary<string, int> statuses;
         private readonly HashSet<string> statusesAppliedThisExchange;
+        private readonly HashSet<PassiveUsageKey> passivesTriggeredThisExchange;
+        private readonly HashSet<PassiveUsageKey> passivesTriggeredThisDuel;
+        private readonly List<PendingPassiveTrigger> pendingDirectHitPassives;
         private readonly List<TimedAttackModifier> temporaryAttackModifiers;
         private readonly PartCombatState[] parts;
 
@@ -79,6 +122,9 @@ namespace ApirApir.Battle
 
             statuses = new Dictionary<string, int>(StringComparer.Ordinal);
             statusesAppliedThisExchange = new HashSet<string>(StringComparer.Ordinal);
+            passivesTriggeredThisExchange = new HashSet<PassiveUsageKey>();
+            passivesTriggeredThisDuel = new HashSet<PassiveUsageKey>();
+            pendingDirectHitPassives = new List<PendingPassiveTrigger>(1);
             temporaryAttackModifiers = new List<TimedAttackModifier>();
             MaximumHitPoints = statCalculator.CalculateMaximumHitPoints(this, true);
             CurrentHitPoints = MaximumHitPoints;
@@ -125,6 +171,30 @@ namespace ApirApir.Battle
         internal Dictionary<string, int> MutableCooldowns => cooldowns;
         internal Dictionary<string, int> MutableStatuses => statuses;
         internal HashSet<string> StatusesAppliedThisExchange => statusesAppliedThisExchange;
+
+        internal bool WasPassiveTriggeredThisExchange(PassiveUsageKey key) =>
+            passivesTriggeredThisExchange.Contains(key);
+
+        internal bool WasPassiveTriggeredThisDuel(PassiveUsageKey key) =>
+            passivesTriggeredThisDuel.Contains(key);
+
+        internal void MarkPassiveTriggered(
+            PassiveUsageKey key,
+            bool exchangeLimited,
+            bool duelLimited)
+        {
+            if (exchangeLimited)
+            {
+                passivesTriggeredThisExchange.Add(key);
+            }
+
+            if (duelLimited)
+            {
+                passivesTriggeredThisDuel.Add(key);
+            }
+        }
+
+        internal List<PendingPassiveTrigger> PendingDirectHitPassives => pendingDirectHitPassives;
 
         public bool HasStatus(string statusId)
         {
@@ -190,6 +260,7 @@ namespace ApirApir.Battle
         {
             ReceivedDirectDamagePreviousExchange = ReceivedDirectDamageThisExchange;
             ReceivedDirectDamageThisExchange = false;
+            passivesTriggeredThisExchange.Clear();
         }
 
         internal void FinalizeAfterBattle(CardStatCalculator statCalculator)

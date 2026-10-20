@@ -59,6 +59,8 @@ namespace ApirApir.Cards
             public int HitPoints;
             public int Attack;
             public float AttackPercent;
+            public float SpeedPercent;
+            public float CriticalPercent;
         }
 
         private AuthoritativeCardAssemblyService service;
@@ -296,7 +298,9 @@ namespace ApirApir.Cards
                 LegsOrder = snapshot.Legs.VisualLayerOrder,
                 HitPoints = snapshot.Stats.MaximumHitPoints,
                 Attack = snapshot.Stats.EffectiveAttack,
-                AttackPercent = snapshot.Stats.AttackBonusPercent
+                AttackPercent = snapshot.Stats.AttackBonusPercent,
+                SpeedPercent = snapshot.Stats.SpeedBonusPercent,
+                CriticalPercent = snapshot.Stats.CriticalChanceBonusPercent
             };
 
             try
@@ -353,7 +357,9 @@ namespace ApirApir.Cards
                     payload.Attack,
                     payload.AttackPercent,
                     new Dictionary<string, float>(StringComparer.Ordinal),
-                    Array.Empty<string>()));
+                    Array.Empty<string>(),
+                    payload.SpeedPercent,
+                    payload.CriticalPercent));
             return true;
         }
 

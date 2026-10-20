@@ -134,7 +134,8 @@ namespace ApirApir.Battle
         ActionSkipped,
         ExchangeCompleted,
         CardDefeated,
-        BattleFinished
+        BattleFinished,
+        StatusApplicationBlockedByImmunity
     }
 
     public readonly struct BattleActionRequest
@@ -228,8 +229,8 @@ namespace ApirApir.Battle
         public float BaseDodgeChance { get; set; } = 0.10f;
         public float MinimumDodgeChance { get; set; } = 0f;
         public float MaximumDodgeChance { get; set; } = 0.30f;
-        /// <summary>Provisional until design supplies the card's base Critical Chance.</summary>
-        public float BaseCriticalChance { get; set; } = 0f;
+        /// <summary>Provisional and configurable base Critical Chance.</summary>
+        public float BaseCriticalChance { get; set; } = 0.10f;
         public float CriticalDamageMultiplier { get; set; } = 1.5f;
         public StatusReapplicationPolicy StatusReapplicationPolicy { get; set; } =
             StatusReapplicationPolicy.RefreshToLongerDuration;

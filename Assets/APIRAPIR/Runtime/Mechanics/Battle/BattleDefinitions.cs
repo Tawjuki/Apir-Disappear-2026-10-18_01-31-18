@@ -14,7 +14,9 @@ namespace ApirApir.Battle
             IReadOnlyList<IPassiveBattleModifier> passiveModifiers = null,
             float speedBonusPercent = 0f,
             float criticalChanceBonusPercent = 0f,
-            float dodgeChanceBonusPercent = 0f)
+            float dodgeChanceBonusPercent = 0f,
+            float hitPointBonusPercent = 0f,
+            IReadOnlyList<PartPassiveDefinition> passiveAbilities = null)
         {
             if (string.IsNullOrWhiteSpace(id))
             {
@@ -26,26 +28,39 @@ namespace ApirApir.Battle
                 throw new ArgumentOutOfRangeException(nameof(additionalHitPoints));
             }
 
+            if (hitPointBonusPercent < 0f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(hitPointBonusPercent));
+            }
+
             Id = id;
             Slot = slot;
             Rarity = rarity;
             AdditionalHitPoints = additionalHitPoints;
+            HitPointBonusPercent = hitPointBonusPercent;
             AttackBonusPercent = attackBonusPercent;
             SpeedBonusPercent = speedBonusPercent;
             CriticalChanceBonusPercent = criticalChanceBonusPercent;
             DodgeChanceBonusPercent = dodgeChanceBonusPercent;
             PassiveModifiers = Copy(passiveModifiers ?? Array.Empty<IPassiveBattleModifier>());
+            PassiveAbilities = Copy(passiveAbilities ?? Array.Empty<PartPassiveDefinition>());
         }
 
         public string Id { get; }
         public PartSlot Slot { get; }
         public PartRarity Rarity { get; }
         public int AdditionalHitPoints { get; }
+        /// <summary>
+        /// Percentage of the card's original base HP contributed by this part. Percentage
+        /// contributions are summed and rounded once; they never compound.
+        /// </summary>
+        public float HitPointBonusPercent { get; }
         public float AttackBonusPercent { get; }
         public float SpeedBonusPercent { get; }
         public float CriticalChanceBonusPercent { get; }
         public float DodgeChanceBonusPercent { get; }
         public IReadOnlyList<IPassiveBattleModifier> PassiveModifiers { get; }
+        public IReadOnlyList<PartPassiveDefinition> PassiveAbilities { get; }
 
         private static IPassiveBattleModifier[] Copy(IReadOnlyList<IPassiveBattleModifier> source)
         {
@@ -53,6 +68,17 @@ namespace ApirApir.Battle
             for (int i = 0; i < copy.Length; i++)
             {
                 copy[i] = source[i] ?? throw new ArgumentException("Passive modifiers cannot contain null entries.");
+            }
+
+            return copy;
+        }
+
+        private static PartPassiveDefinition[] Copy(IReadOnlyList<PartPassiveDefinition> source)
+        {
+            var copy = new PartPassiveDefinition[source.Count];
+            for (int i = 0; i < copy.Length; i++)
+            {
+                copy[i] = source[i] ?? throw new ArgumentException("Passive abilities cannot contain null entries.");
             }
 
             return copy;

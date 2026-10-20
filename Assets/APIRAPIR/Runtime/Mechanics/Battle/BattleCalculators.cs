@@ -3,6 +3,22 @@ using System.Collections.Generic;
 
 namespace ApirApir.Battle
 {
+    public static class CardHitPointCalculator
+    {
+        public static int Calculate(int baseHitPoints, int flatBonus, float percentageBonus)
+        {
+            if (baseHitPoints <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(baseHitPoints));
+            }
+
+            int percentageHitPoints = (int)Math.Round(
+                (decimal)baseHitPoints * (decimal)percentageBonus / 100m,
+                MidpointRounding.AwayFromZero);
+            return Math.Max(1, baseHitPoints + Math.Max(0, flatBonus) + percentageHitPoints);
+        }
+    }
+
     public interface IRandomNumberProvider
     {
         double NextUnit();
@@ -32,17 +48,19 @@ namespace ApirApir.Battle
                 throw new ArgumentNullException(nameof(card));
             }
 
-            int result = card.BaseHitPoints;
+            int flatBonus = 0;
+            float percentageBonus = 0f;
             for (int i = 0; i < card.Parts.Count; i++)
             {
                 PartCombatState part = card.Parts[i];
                 if ((retainBrokenPartHitPoints && part.ContributesHitPointsThisBattle) || part.IsFunctional)
                 {
-                    result += part.Definition.AdditionalHitPoints;
+                    flatBonus += part.Definition.AdditionalHitPoints;
+                    percentageBonus += part.Definition.HitPointBonusPercent;
                 }
             }
 
-            return Math.Max(1, result);
+            return CardHitPointCalculator.Calculate(card.BaseHitPoints, flatBonus, percentageBonus);
         }
 
         public float CalculateAttackBonusPercent(CardCombatState card)
@@ -145,7 +163,8 @@ namespace ApirApir.Battle
             float attackBonusPercent,
             float incomingDamageMultiplier,
             bool critical,
-            float criticalDamageMultiplier)
+            float criticalDamageMultiplier,
+            int flatDamageBonus = 0)
         {
             var context = new DamageCalculationContext(
                 source,
@@ -156,6 +175,7 @@ namespace ApirApir.Battle
             decimal damage = Math.Max(0m, strategy.CalculateUnroundedDamage(context));
 
             ApplyOutgoingPassives(source, target, skill, ref damage);
+            damage += Math.Max(0, flatDamageBonus);
             ApplyIncomingPassives(source, target, skill, ref damage);
             damage *= Math.Max(0m, (decimal)incomingDamageMultiplier);
             if (critical)

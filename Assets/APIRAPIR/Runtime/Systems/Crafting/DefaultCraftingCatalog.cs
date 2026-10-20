@@ -160,7 +160,7 @@ namespace ApirApir.Crafting
             string partId = "part_" + characterId + "_" + suffix;
             string recipeId = "recipe_" + characterId + "_" + suffix;
             PartDefinition battleDefinition = resolver?.ResolvePartDefinition(partId, slot, rarity) ??
-                                              new PartDefinition(partId, slot, rarity);
+                                              DefaultPartDefinitionCatalog.GetRequired(partId);
             var part = new CraftablePartDefinition(
                 partId,
                 characterDisplayName + " " + slot,

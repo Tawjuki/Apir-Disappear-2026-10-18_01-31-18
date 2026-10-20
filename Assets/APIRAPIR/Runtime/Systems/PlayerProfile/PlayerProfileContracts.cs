@@ -184,4 +184,61 @@ namespace ApirApir.PlayerProfiles
         public bool IsCompleted { get; }
         public IReadOnlyList<PlayerFinalPlacement> Placements { get; }
     }
+
+    /// <summary>
+    /// Shared validation for the one event that is allowed to award permanent match statistics.
+    /// Keeping this rule here prevents local and cloud persistence from interpreting results
+    /// differently.
+    /// </summary>
+    public static class CompletedMatchPolicy
+    {
+        public const int RequiredPlayerCount = 4;
+        public const int MaximumMatchIdLength = 128;
+
+        public static bool TryValidate(
+            CompletedMatchResult result,
+            out IReadOnlyList<PlayerFinalPlacement> placements)
+        {
+            placements = null;
+            string matchId = result?.MatchId == null ? string.Empty : result.MatchId.Trim();
+            if (result == null || !result.IsCompleted ||
+                matchId.Length == 0 || matchId.Length > MaximumMatchIdLength ||
+                result.Placements == null || result.Placements.Count != RequiredPlayerCount)
+            {
+                return false;
+            }
+
+            var playerIds = new HashSet<string>(StringComparer.Ordinal);
+            var finalPlaces = new HashSet<FinalMatchPlacement>();
+            var normalized = new List<PlayerFinalPlacement>(RequiredPlayerCount);
+            for (int i = 0; i < result.Placements.Count; i++)
+            {
+                PlayerFinalPlacement placement = result.Placements[i];
+                string playerId = placement.PlayerId == null
+                    ? string.Empty
+                    : placement.PlayerId.Trim();
+                if (playerId.Length == 0 ||
+                    !Enum.IsDefined(typeof(FinalMatchPlacement), placement.Placement) ||
+                    !playerIds.Add(playerId) ||
+                    !finalPlaces.Add(placement.Placement))
+                {
+                    return false;
+                }
+
+                normalized.Add(new PlayerFinalPlacement(playerId, placement.Placement));
+            }
+
+            if (finalPlaces.Count != RequiredPlayerCount ||
+                !finalPlaces.Contains(FinalMatchPlacement.First) ||
+                !finalPlaces.Contains(FinalMatchPlacement.Second) ||
+                !finalPlaces.Contains(FinalMatchPlacement.Third) ||
+                !finalPlaces.Contains(FinalMatchPlacement.Fourth))
+            {
+                return false;
+            }
+
+            placements = normalized.AsReadOnly();
+            return true;
+        }
+    }
 }

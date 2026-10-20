@@ -110,24 +110,43 @@ namespace ApirApir.Battle
         private readonly StatusEffectCatalog catalog;
         private readonly StatusReapplicationPolicy reapplicationPolicy;
         private readonly IRandomNumberProvider random;
+        private readonly PartPassiveRuntimeSystem passives;
 
         public StatusEffectSystem(
             StatusEffectCatalog catalog,
             StatusReapplicationPolicy reapplicationPolicy,
-            IRandomNumberProvider random)
+            IRandomNumberProvider random,
+            PartPassiveRuntimeSystem passives = null)
         {
             this.catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
             this.reapplicationPolicy = reapplicationPolicy;
             this.random = random ?? throw new ArgumentNullException(nameof(random));
+            this.passives = passives;
         }
 
         public StatusEffectCatalog Catalog => catalog;
 
         public bool TryApply(CardCombatState target, string statusId, out int duration)
         {
+            return TryApply(target, statusId, out duration, out _);
+        }
+
+        public bool TryApply(
+            CardCombatState target,
+            string statusId,
+            out int duration,
+            out bool blockedByImmunity)
+        {
             duration = 0;
+            blockedByImmunity = false;
             if (target == null || !catalog.TryGet(statusId, out StatusEffectDefinition definition))
             {
+                return false;
+            }
+
+            if (passives != null && passives.IsImmune(target, definition.Id))
+            {
+                blockedByImmunity = true;
                 return false;
             }
 

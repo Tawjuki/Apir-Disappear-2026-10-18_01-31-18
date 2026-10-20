@@ -164,7 +164,9 @@ namespace ApirApir.Crafting
                 ? displayName
                 : characterDisplayName.Trim();
             AdditionalStatModifiers = CopyModifiers(additionalStatModifiers);
-            PassiveAbilityReferences = CopyIdentifiers(passiveAbilityReferences);
+            PassiveAbilityReferences = passiveAbilityReferences == null
+                ? CopyPassiveIdentifiers(battleDefinition.PassiveAbilities)
+                : CopyIdentifiers(passiveAbilityReferences);
             VisualAssetId = string.IsNullOrWhiteSpace(visualAssetId) ? id : visualAssetId.Trim();
             VisualOffsetX = visualOffsetX;
             VisualOffsetY = visualOffsetY;
@@ -183,7 +185,10 @@ namespace ApirApir.Crafting
         public int InitialMaintenance => BattleDefinition.MaximumMaintenance;
         public int MaximumMaintenance => BattleDefinition.MaximumMaintenance;
         public int HitPointContribution => BattleDefinition.AdditionalHitPoints;
+        public float HitPointBonusPercent => BattleDefinition.HitPointBonusPercent;
         public float AttackBonusPercent => BattleDefinition.AttackBonusPercent;
+        public float SpeedBonusPercent => BattleDefinition.SpeedBonusPercent;
+        public float CriticalChanceBonusPercent => BattleDefinition.CriticalChanceBonusPercent;
         public IReadOnlyDictionary<string, float> AdditionalStatModifiers { get; }
         public IReadOnlyList<string> PassiveAbilityReferences { get; }
         public string VisualAssetId { get; }
@@ -241,6 +246,23 @@ namespace ApirApir.Crafting
             }
 
             return copy;
+        }
+
+        private static IReadOnlyList<string> CopyPassiveIdentifiers(
+            IReadOnlyList<PartPassiveDefinition> source)
+        {
+            if (source == null || source.Count == 0)
+            {
+                return Array.Empty<string>();
+            }
+
+            var result = new string[source.Count];
+            for (int i = 0; i < result.Length; i++)
+            {
+                result[i] = source[i].Id;
+            }
+
+            return result;
         }
 
         private static int GetDefaultLayerOrder(PartSlot slot)

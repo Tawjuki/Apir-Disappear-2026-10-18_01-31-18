@@ -1,0 +1,23 @@
+{
+  "name": "ApirApir.Patintero.Editor",
+  "rootNamespace": "ApirApir.Editor",
+  "references": [
+    "ApirApir.Minigames.Shared",
+    "ApirApir.Multiplayer",
+    "ApirApir.Patintero",
+    "Unity.Netcode.Runtime",
+    "Unity.Networking.Transport",
+    "Unity.InputSystem"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

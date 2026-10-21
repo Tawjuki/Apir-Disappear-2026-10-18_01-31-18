@@ -2,6 +2,7 @@
   "name": "ApirApir.Patintero.Tests",
   "rootNamespace": "ApirApir.Patintero.Tests",
   "references": [
+    "ApirApir.Minigames.Shared",
     "ApirApir.Patintero",
     "ApirApir.Multiplayer",
     "Unity.Netcode.Runtime",

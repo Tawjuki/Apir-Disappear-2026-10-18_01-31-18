@@ -215,6 +215,38 @@ namespace ApirApir.Tests.Minigames.OneVsThree
         }
 
         [Test]
+        public void CameraFollowPositionUsesFixedCameraRotationAndConfiguredFraming()
+        {
+            Vector3 result = TaguTaguanCameraFollow.CalculateDesiredPosition(
+                new Vector3(10f, 2f, 20f),
+                Quaternion.identity,
+                new Vector3(1f, 3f, 4f),
+                8f,
+                false,
+                Vector2.zero,
+                Vector2.zero);
+
+            Assert.That(result, Is.EqualTo(new Vector3(11f, 5f, 16f)));
+        }
+
+        [Test]
+        public void CameraFollowBoundariesClampWorldPositionRegardlessOfInspectorOrder()
+        {
+            Vector3 result = TaguTaguanCameraFollow.CalculateDesiredPosition(
+                new Vector3(100f, 2f, -100f),
+                Quaternion.identity,
+                Vector3.zero,
+                1f,
+                true,
+                new Vector2(5f, 7f),
+                new Vector2(-5f, -7f));
+
+            Assert.That(result.x, Is.EqualTo(5f));
+            Assert.That(result.y, Is.EqualTo(2f));
+            Assert.That(result.z, Is.EqualTo(-7f));
+        }
+
+        [Test]
         public void NetworkRpcSignaturesContainNoArrayParameters()
         {
             MethodInfo[] rpcMethods = typeof(TaguTaguanNetworkBridge)

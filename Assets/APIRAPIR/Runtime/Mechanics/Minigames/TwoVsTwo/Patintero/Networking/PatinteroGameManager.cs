@@ -11,8 +11,10 @@ namespace ApirApir.Patintero
     {
         [SerializeField] private PatinteroSettings settings;
         [SerializeField] private NetworkSessionService sessionService;
+        [SerializeField] private PatinteroGuardPath[] guardPaths = System.Array.Empty<PatinteroGuardPath>();
 
         private readonly Dictionary<ulong, PatinteroRole> authoritativeRoles = new(4);
+        private readonly Dictionary<ulong, double> nextTagTimes = new(2);
         private bool pendingStartCheck;
         private string authoritativeAssignmentId = string.Empty;
 
@@ -119,7 +121,7 @@ namespace ApirApir.Patintero
                 return;
             }
 
-            ResolveRunnerProgressAndTags();
+            ResolveRunnerProgress();
         }
 
         private void ResolveSessionService()
@@ -240,6 +242,7 @@ namespace ApirApir.Patintero
                 ? authoritativeRoles.Values.Count(role => role == PatinteroRole.Taya)
                 : settings.tayaCount;
             int runnerCount = players.Count - tayaCount;
+            nextTagTimes.Clear();
 
             for (int i = 0; i < players.Count; i++)
             {
@@ -254,7 +257,8 @@ namespace ApirApir.Patintero
                         PatinteroRole.Taya,
                         RunnerProgress.Outbound,
                         new Vector3(GetTayaSpawnX(tayaAssigned, tayaCount), 1f, lineZ),
-                        lineZ);
+                        lineZ,
+                        GetGuardPath(tayaAssigned));
                     tayaAssigned++;
                 }
                 else
@@ -311,7 +315,7 @@ namespace ApirApir.Patintero
                 }
             }
 
-            if (!((runners == 2 && taya == 2) || (runners == 3 && taya == 1)))
+            if (runners != 2 || taya != 2)
             {
                 return false;
             }
@@ -345,13 +349,8 @@ namespace ApirApir.Patintero
             return true;
         }
 
-        private void ResolveRunnerProgressAndTags()
+        private void ResolveRunnerProgress()
         {
-            PatinteroPlayer[] tayaPlayers = PatinteroPlayer.SpawnedPlayers
-                .Where(player => player.IsSpawned && player.Role.Value == PatinteroRole.Taya)
-                .ToArray();
-
-            bool completed = false;
             foreach (PatinteroPlayer runner in PatinteroPlayer.SpawnedPlayers)
             {
                 if (!runner.IsSpawned || runner.Role.Value != PatinteroRole.Runner || runner.IsCaught ||
@@ -370,23 +369,69 @@ namespace ApirApir.Patintero
                     runner.SetProgressOnServer(progress);
                 }
 
-                if (progress == RunnerProgress.Completed)
+            }
+
+            EvaluateRoundResult();
+        }
+
+        public bool TryTagOnServer(PatinteroPlayer guard)
+        {
+            if (!IsServer || guard == null || !guard.IsSpawned ||
+                RoundState.Value != PatinteroRoundState.Playing ||
+                guard.Role.Value != PatinteroRole.Taya || guard.IsCaught)
+            {
+                return false;
+            }
+
+            double now = NetworkManager.ServerTime.Time;
+            if (nextTagTimes.TryGetValue(guard.OwnerClientId, out double availableAt) &&
+                now + 0.0001d < availableAt)
+            {
+                return false;
+            }
+
+            nextTagTimes[guard.OwnerClientId] = now + settings.TagCooldown;
+            PatinteroPlayer closest = null;
+            float closestDistance = float.PositiveInfinity;
+            foreach (PatinteroPlayer runner in PatinteroPlayer.SpawnedPlayers)
+            {
+                if (runner == null || !runner.IsSpawned || runner.Role.Value != PatinteroRole.Runner ||
+                    runner.Progress.Value is RunnerProgress.Caught or RunnerProgress.Completed ||
+                    !PatinteroRules.IsTag(guard.transform.position, runner.transform.position, settings.tagRadius))
                 {
-                    completed = true;
-                    break;
+                    continue;
                 }
 
-                for (int i = 0; i < tayaPlayers.Length; i++)
+                Vector3 delta = runner.transform.position - guard.transform.position;
+                delta.y = 0f;
+                float distance = delta.sqrMagnitude;
+                if (distance < closestDistance)
                 {
-                    if (PatinteroRules.IsTag(tayaPlayers[i].transform.position, runner.transform.position, settings.tagRadius))
-                    {
-                        runner.SetProgressOnServer(RunnerProgress.Caught);
-                        break;
-                    }
+                    closest = runner;
+                    closestDistance = distance;
                 }
             }
 
-            PatinteroResult evaluated = PatinteroRules.EvaluateResult(CountActiveRunners(), completed, false);
+            if (closest == null)
+            {
+                return false;
+            }
+
+            closest.SetProgressOnServer(RunnerProgress.Caught);
+            EvaluateRoundResult();
+            return true;
+        }
+
+        private void EvaluateRoundResult()
+        {
+            int completedRunners = PatinteroPlayer.SpawnedPlayers.Count(player =>
+                player != null && player.IsSpawned && player.Role.Value == PatinteroRole.Runner &&
+                player.Progress.Value == RunnerProgress.Completed);
+            PatinteroResult evaluated = PatinteroRules.EvaluateResult(
+                CountActiveRunners(),
+                completedRunners,
+                settings.requiredRunnerCompletions,
+                false);
             if (evaluated != PatinteroResult.None)
             {
                 FinishRound(evaluated);
@@ -471,6 +516,17 @@ namespace ApirApir.Patintero
 
             return Mathf.Lerp(-settings.HalfWidth * 0.35f, settings.HalfWidth * 0.35f,
                 index / (tayaCount - 1f));
+        }
+
+        private PatinteroGuardPath GetGuardPath(int index)
+        {
+            if (guardPaths == null || index < 0 || index >= guardPaths.Length)
+            {
+                return null;
+            }
+
+            PatinteroGuardPath path = guardPaths[index];
+            return path != null && path.HasUsableSegments ? path : null;
         }
     }
 }

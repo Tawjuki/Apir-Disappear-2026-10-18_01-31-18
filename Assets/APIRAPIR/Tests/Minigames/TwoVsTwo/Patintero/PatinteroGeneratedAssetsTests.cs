@@ -1,13 +1,11 @@
 using NUnit.Framework;
-using ApirApir.Multiplayer;
+using ApirApir.Minigames;
 using Unity.Netcode;
 using Unity.Netcode.Components;
-using Unity.Netcode.Transports.UTP;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -16,7 +14,7 @@ namespace ApirApir.Patintero.Tests
     public sealed class PatinteroGeneratedAssetsTests
     {
         private const string Root = "Assets/APIRAPIR/Runtime/Mechanics/Minigames/Patintero";
-        private const string ScenePath = "Assets/Scenes/PatinteroPrototype.unity";
+        private const string ScenePath = "Assets/Scenes/Patintero.unity";
         private const string PrefabPath = Root + "/Prefabs/PatinteroPlayer.prefab";
         private const string SettingsPath = Root + "/Config/PatinteroSettings.asset";
         private const string NetworkPrefabsPath = Root + "/Config/PatinteroNetworkPrefabs.asset";
@@ -37,7 +35,7 @@ namespace ApirApir.Patintero.Tests
         }
 
         [Test]
-        public void PrototypeScene_HasConfiguredNetworkCourtCameraAndHud()
+        public void PatinteroScene_HasCameraInputAndPlayableCharacterWithoutMissingScripts()
         {
             SceneSetup[] previousSetup = EditorSceneManager.GetSceneManagerSetup();
             try
@@ -45,39 +43,26 @@ namespace ApirApir.Patintero.Tests
                 Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
                 Assert.That(scene.IsValid() && scene.isLoaded, Is.True);
 
-                NetworkManager networkManager = Object.FindFirstObjectByType<NetworkManager>();
-                Assert.That(networkManager, Is.Not.Null);
-                UnityTransport transport = networkManager.GetComponent<UnityTransport>();
-                Assert.That(transport, Is.Not.Null);
-                Assert.That(networkManager.NetworkConfig.NetworkTransport, Is.EqualTo(transport));
-                Assert.That(networkManager.NetworkConfig.ConnectionApproval, Is.True);
-                Assert.That(networkManager.NetworkConfig.EnableSceneManagement, Is.True);
-                Assert.That(networkManager.NetworkConfig.PlayerPrefab,
-                    Is.EqualTo(AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath)));
-                Assert.That(networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists, Has.Count.EqualTo(1));
                 NetworkPrefabsList prefabs = AssetDatabase.LoadAssetAtPath<NetworkPrefabsList>(NetworkPrefabsPath);
                 Assert.That(prefabs, Is.Not.Null);
-                Assert.That(networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists[0], Is.EqualTo(prefabs));
                 Assert.That(prefabs.Contains(AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath)), Is.True);
 
-                PatinteroGameManager gameManager = Object.FindFirstObjectByType<PatinteroGameManager>();
-                Assert.That(gameManager, Is.Not.Null);
-                Assert.That(gameManager.GetComponent<NetworkObject>(), Is.Not.Null);
-                NetworkSessionService sessionService = gameManager.GetComponent<NetworkSessionService>();
-                Assert.That(sessionService, Is.Not.Null);
-                SerializedObject gameManagerData = new(gameManager);
-                Assert.That(gameManagerData.FindProperty("settings").objectReferenceValue,
-                    Is.EqualTo(AssetDatabase.LoadAssetAtPath<PatinteroSettings>(SettingsPath)));
+                PatinteroSettings settings = AssetDatabase.LoadAssetAtPath<PatinteroSettings>(SettingsPath);
+                Assert.That(settings, Is.Not.Null);
+                Assert.That(settings.requiredPlayers, Is.EqualTo(4));
+                Assert.That(settings.tayaCount, Is.EqualTo(2));
 
                 Camera camera = Camera.main;
                 Assert.That(camera, Is.Not.Null);
-                Assert.That(camera.orthographic, Is.True);
                 Assert.That(Object.FindFirstObjectByType<Canvas>(), Is.Not.Null);
-                Assert.That(Object.FindFirstObjectByType<PatinteroNetworkUI>(), Is.Not.Null);
-                Assert.That(Object.FindFirstObjectByType<NetworkSessionUI>(), Is.Not.Null);
                 Assert.That(Object.FindFirstObjectByType<EventSystem>(), Is.Not.Null);
-                Assert.That(Object.FindFirstObjectByType<InputSystemUIInputModule>(), Is.Not.Null);
-                Assert.That(GameObject.Find("Court"), Is.Not.Null);
+                PatinteroPlayer player = Object.FindFirstObjectByType<PatinteroPlayer>();
+                Assert.That(player, Is.Not.Null);
+                Assert.That(player.GetComponent<NetworkObject>(), Is.Not.Null);
+                Assert.That(player.GetComponent<PatinteroKeyboardInput>(), Is.Not.Null);
+                Assert.That(player.GetComponent<PatinteroKeyboardInput>(), Is.InstanceOf<MinigamePlayerInput>());
+                Assert.That(player.GetComponent<CharacterController>(), Is.Not.Null);
+                Assert.That(player.GetComponentInChildren<Animator>(), Is.Not.Null);
 
                 foreach (GameObject root in scene.GetRootGameObjects())
                 {

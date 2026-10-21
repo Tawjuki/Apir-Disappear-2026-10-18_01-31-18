@@ -1,4 +1,6 @@
 using NUnit.Framework;
+using ApirApir.Minigames;
+using UnityEditor;
 using UnityEngine;
 
 namespace ApirApir.Patintero.Tests
@@ -58,6 +60,117 @@ namespace ApirApir.Patintero.Tests
         }
 
         [Test]
+        public void MovementVelocity_NormalizesDiagonalAndUsesSeparateDeceleration()
+        {
+            Vector2 accelerated = MinigameMovementMath.MoveVelocityTowards(
+                Vector2.zero,
+                Vector2.one,
+                6f,
+                100f,
+                2f,
+                1f);
+            Vector2 decelerated = MinigameMovementMath.MoveVelocityTowards(
+                accelerated,
+                Vector2.zero,
+                6f,
+                100f,
+                2f,
+                1f);
+
+            Assert.That(accelerated.magnitude, Is.EqualTo(6f).Within(0.001f));
+            Assert.That(decelerated.magnitude, Is.EqualTo(4f).Within(0.001f));
+        }
+
+        [Test]
+        public void CameraRelativeInput_UsesCamerasHorizontalOrientation()
+        {
+            GameObject cameraObject = new("Test Camera");
+            try
+            {
+                cameraObject.transform.rotation = Quaternion.Euler(35f, 180f, 0f);
+
+                Vector2 up = MinigameMovementMath.ToCameraRelative(
+                    Vector2.up,
+                    cameraObject.transform);
+                Vector2 right = MinigameMovementMath.ToCameraRelative(
+                    Vector2.right,
+                    cameraObject.transform);
+
+                Assert.That(up.x, Is.EqualTo(0f).Within(0.001f));
+                Assert.That(up.y, Is.EqualTo(-1f).Within(0.001f));
+                Assert.That(right.x, Is.EqualTo(-1f).Within(0.001f));
+                Assert.That(right.y, Is.EqualTo(0f).Within(0.001f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(cameraObject);
+            }
+        }
+
+        [Test]
+        public void SharedInputFrame_TracksContextActionSlotsIndependently()
+        {
+            MinigameInputFrame frame = new(
+                new Vector2(2f, 0f),
+                MinigameActionMask.Primary | MinigameActionMask.Modifier,
+                MinigameActionMask.Primary,
+                MinigameActionMask.Secondary);
+
+            Assert.That(frame.Movement.magnitude, Is.EqualTo(1f).Within(0.001f));
+            Assert.That(frame.IsHeld(MinigameActionSlot.Primary), Is.True);
+            Assert.That(frame.IsHeld(MinigameActionSlot.Modifier), Is.True);
+            Assert.That(frame.WasPressed(MinigameActionSlot.Primary), Is.True);
+            Assert.That(frame.WasReleased(MinigameActionSlot.Secondary), Is.True);
+            Assert.That(frame.IsHeld(MinigameActionSlot.Secondary), Is.False);
+            Assert.That(MinigameInputFrame.ToMask((MinigameActionSlot)byte.MaxValue),
+                Is.EqualTo(MinigameActionMask.None));
+        }
+
+        [Test]
+        public void GuardPath_AllowsOnlyConfiguredIntersectionTurn()
+        {
+            GameObject pathObject = new("Guard Path");
+            GameObject start = new("Horizontal Start");
+            GameObject intersection = new("Intersection");
+            GameObject end = new("Vertical End");
+
+            try
+            {
+                start.transform.position = new Vector3(-2f, 0f, 0f);
+                intersection.transform.position = Vector3.zero;
+                end.transform.position = new Vector3(0f, 0f, 2f);
+
+                PatinteroGuardPath path = pathObject.AddComponent<PatinteroGuardPath>();
+                SerializedObject serializedPath = new(path);
+                SerializedProperty segments = serializedPath.FindProperty("segments");
+                segments.arraySize = 2;
+                SetSegment(segments.GetArrayElementAtIndex(0), start.transform, intersection.transform, 1);
+                SetSegment(segments.GetArrayElementAtIndex(1), intersection.transform, end.transform);
+                serializedPath.ApplyModifiedPropertiesWithoutUndo();
+
+                int activeSegment = 0;
+                Vector3 moved = path.MoveAndConstrain(
+                    new Vector3(-0.1f, 1f, 0f),
+                    new Vector2(0f, 2f),
+                    Vector2.up,
+                    0.25f,
+                    ref activeSegment);
+
+                Assert.That(activeSegment, Is.EqualTo(1));
+                Assert.That(moved.x, Is.EqualTo(0f).Within(0.001f));
+                Assert.That(moved.z, Is.GreaterThan(0f));
+                Assert.That(moved.y, Is.EqualTo(1f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(pathObject);
+                Object.DestroyImmediate(start);
+                Object.DestroyImmediate(intersection);
+                Object.DestroyImmediate(end);
+            }
+        }
+
+        [Test]
         public void Runner_MustReachFarSideBeforeReturnCounts()
         {
             RunnerProgress atStart = PatinteroRules.AdvanceRunner(
@@ -92,6 +205,30 @@ namespace ApirApir.Patintero.Tests
         public void ResultEvaluation_IsDeterministic(int activeRunners, bool completed, bool expired, PatinteroResult expected)
         {
             Assert.That(PatinteroRules.EvaluateResult(activeRunners, completed, expired), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void ResultEvaluation_UsesConfiguredRunnerCompletionRequirement()
+        {
+            Assert.That(PatinteroRules.EvaluateResult(1, 1, 2, false), Is.EqualTo(PatinteroResult.None));
+            Assert.That(PatinteroRules.EvaluateResult(0, 1, 2, false), Is.EqualTo(PatinteroResult.TayaWins));
+            Assert.That(PatinteroRules.EvaluateResult(0, 2, 2, false), Is.EqualTo(PatinteroResult.RunnersWin));
+        }
+
+        private static void SetSegment(
+            SerializedProperty segment,
+            Transform start,
+            Transform end,
+            params int[] connections)
+        {
+            segment.FindPropertyRelative("start").objectReferenceValue = start;
+            segment.FindPropertyRelative("end").objectReferenceValue = end;
+            SerializedProperty permittedConnections = segment.FindPropertyRelative("permittedConnections");
+            permittedConnections.arraySize = connections.Length;
+            for (int i = 0; i < connections.Length; i++)
+            {
+                permittedConnections.GetArrayElementAtIndex(i).intValue = connections[i];
+            }
         }
     }
 }

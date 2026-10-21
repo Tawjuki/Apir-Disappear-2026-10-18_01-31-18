@@ -1,6 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
+using ApirApir.Minigames;
 
 namespace ApirApir.Patintero
 {
@@ -12,17 +13,25 @@ namespace ApirApir.Patintero
         [SerializeField] private Text roleText;
         [SerializeField] private Text roundText;
         [SerializeField] private Text resultText;
+        [SerializeField] private MinigameContextActionView contextAction;
 
         private NetworkManager manager;
 
 #if UNITY_EDITOR
-        public void ConfigureForEditor(Button restart, Text timer, Text role, Text round, Text result)
+        public void ConfigureForEditor(
+            Button restart,
+            Text timer,
+            Text role,
+            Text round,
+            Text result,
+            MinigameContextActionView action = null)
         {
             restartButton = restart;
             timerText = timer;
             roleText = role;
             roundText = round;
             resultText = result;
+            contextAction = action;
         }
 #endif
 
@@ -64,6 +73,7 @@ namespace ApirApir.Patintero
                 SetText(roleText, "Role: --");
                 SetText(roundText, "Waiting for network");
                 SetText(resultText, string.Empty);
+                contextAction?.SetContext(string.Empty, false);
                 return;
             }
 
@@ -82,6 +92,7 @@ namespace ApirApir.Patintero
             }
 
             SetText(roleText, local == null ? "Role: --" : BuildRoleText(local));
+            UpdateContextAction(game, local);
             SetText(roundText, game.RoundState.Value switch
             {
                 PatinteroRoundState.WaitingForPlayers => "Waiting for four ready players...",
@@ -96,6 +107,25 @@ namespace ApirApir.Patintero
                 PatinteroResult.TayaWins => "TAYA WINS!",
                 _ => string.Empty
             });
+        }
+
+        private void UpdateContextAction(PatinteroGameManager game, PatinteroPlayer local)
+        {
+            if (contextAction == null)
+            {
+                return;
+            }
+
+            if (local == null || local.Role.Value == PatinteroRole.Unassigned)
+            {
+                contextAction.SetContext(string.Empty, false);
+                return;
+            }
+
+            string label = local.Role.Value == PatinteroRole.Taya ? "TAG" : "RUN";
+            bool available = game != null && game.RoundState.Value == PatinteroRoundState.Playing &&
+                             local.CanMove;
+            contextAction.SetContext(label, available);
         }
 
         private static string BuildRoleText(PatinteroPlayer player)

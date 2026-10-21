@@ -4,6 +4,35 @@ namespace ApirApir.Patintero
 {
     public static class PatinteroRules
     {
+        public static Vector3 ConstrainToCourt(
+            Vector3 position,
+            PatinteroRole role,
+            float guardLineZ,
+            PatinteroSettings settings)
+        {
+            if (settings == null)
+            {
+                return position;
+            }
+
+            float minX = -settings.HalfWidth + settings.playerRadius;
+            float maxX = settings.HalfWidth - settings.playerRadius;
+            position.x = Mathf.Clamp(position.x, minX, maxX);
+
+            if (role == PatinteroRole.Taya)
+            {
+                position.z = guardLineZ;
+            }
+            else
+            {
+                float minZ = -settings.HalfLength + settings.playerRadius;
+                float maxZ = settings.HalfLength - settings.playerRadius;
+                position.z = Mathf.Clamp(position.z, minZ, maxZ);
+            }
+
+            return position;
+        }
+
         public static Vector3 MoveAndConstrain(
             Vector3 current,
             Vector2 input,
@@ -16,21 +45,7 @@ namespace ApirApir.Patintero
             float speed = role == PatinteroRole.Taya ? settings.tayaSpeed : settings.runnerSpeed;
             Vector3 result = current + new Vector3(input.x, 0f, input.y) * (speed * Mathf.Max(0f, deltaTime));
 
-            float minX = -settings.HalfWidth + settings.playerRadius;
-            float maxX = settings.HalfWidth - settings.playerRadius;
-            result.x = Mathf.Clamp(result.x, minX, maxX);
-
-            if (role == PatinteroRole.Taya)
-            {
-                result.z = guardLineZ;
-            }
-            else
-            {
-                float minZ = -settings.HalfLength + settings.playerRadius;
-                float maxZ = settings.HalfLength - settings.playerRadius;
-                result.z = Mathf.Clamp(result.z, minZ, maxZ);
-            }
-
+            result = ConstrainToCourt(result, role, guardLineZ, settings);
             result.y = current.y;
             return result;
         }
@@ -57,14 +72,21 @@ namespace ApirApir.Patintero
             return (tayaPosition - runnerPosition).sqrMagnitude <= tagRadius * tagRadius;
         }
 
-        public static PatinteroResult EvaluateResult(int activeRunners, bool anyCompleted, bool timeExpired)
+        public static PatinteroResult EvaluateResult(
+            int activeRunners,
+            int completedRunners,
+            int requiredCompletions,
+            bool timeExpired)
         {
-            if (anyCompleted)
+            if (completedRunners >= Mathf.Max(1, requiredCompletions))
             {
                 return PatinteroResult.RunnersWin;
             }
 
             return activeRunners <= 0 || timeExpired ? PatinteroResult.TayaWins : PatinteroResult.None;
         }
+
+        public static PatinteroResult EvaluateResult(int activeRunners, bool anyCompleted, bool timeExpired) =>
+            EvaluateResult(activeRunners, anyCompleted ? 1 : 0, 1, timeExpired);
     }
 }

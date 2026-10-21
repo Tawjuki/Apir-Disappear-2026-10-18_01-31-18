@@ -18,10 +18,17 @@ MonoBehaviour:
   endZoneDepth: 1.25
   guardingLineZ:
   - 0
+  runnerWalkSpeed: 3.75
   runnerSpeed: 5.5
   tayaSpeed: 6
+  acceleration: 28
+  deceleration: 36
+  rotationSpeedDegrees: 720
   tagRadius: 1.15
+  tagCooldownSeconds: 0.35
   inputSendRate: 30
+  inputKeepAliveSeconds: 0.5
   roundDurationSeconds: 30
   requiredPlayers: 4
-  tayaCount: 1
+  tayaCount: 2
+  requiredRunnerCompletions: 1

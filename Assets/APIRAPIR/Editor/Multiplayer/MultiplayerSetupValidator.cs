@@ -75,8 +75,8 @@ namespace ApirApir.Editor
                 Require(gameManager != null && gameManager.Settings != null, "PatinteroGameManager settings are missing.");
                 Require(gameManager.Settings.requiredPlayers == NetworkSessionService.MaximumPlayers,
                     "Patintero must require exactly four players.");
-                Require(gameManager.Settings.tayaCount == 1,
-                    "The current Patintero format must contain one Taya and three runners.");
+                Require(gameManager.Settings.tayaCount == 2,
+                    "Patintero must contain two Taya guards and two runners.");
 
                 foreach (GameObject root in scene.GetRootGameObjects())
                 {

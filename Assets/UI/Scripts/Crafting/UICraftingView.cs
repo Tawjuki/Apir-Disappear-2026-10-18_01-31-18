@@ -28,6 +28,9 @@ namespace ApirApir.UI
         public Button btnCraft;
         public TextMeshProUGUI craftButtonLabel;
 
+        [Header("HUD Navigation")]
+        public Button btnExit;
+
         [Header("Materials Inventory")]
         public UIInventoryGrid materialsGrid;
         public UIDropTarget materialsDropArea;
@@ -177,11 +180,33 @@ namespace ApirApir.UI
 
             if (btnCraft == null)
             {
+                Transform authoredDraw = FindDescendant(root, "DrawButton") ??
+                                         FindDescendant(root, "CraftButton") ??
+                                         FindDescendant(root, "BtnCraft");
+                if (authoredDraw != null)
+                {
+                    btnCraft = authoredDraw.GetComponent<Button>();
+                }
+            }
+
+            if (btnCraft == null)
+            {
                 btnCraft = CreateButton(root as RectTransform, "CraftButton", "CRAFT",
                     new Vector2(0.58f, 0.07f), new Vector2(0.74f, 0.14f));
-                craftButtonLabel = btnCraft == null
-                    ? null
-                    : btnCraft.GetComponentInChildren<TextMeshProUGUI>();
+            }
+
+            if (craftButtonLabel == null && btnCraft != null)
+            {
+                craftButtonLabel = btnCraft.GetComponentInChildren<TextMeshProUGUI>(true);
+            }
+
+            if (btnExit == null)
+            {
+                Transform authoredExit = FindDescendant(root, "ExitButton");
+                if (authoredExit != null)
+                {
+                    btnExit = authoredExit.GetComponent<Button>();
+                }
             }
 
             EnsureMaterialsGrid();

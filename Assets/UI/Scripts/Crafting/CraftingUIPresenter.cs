@@ -145,7 +145,16 @@ namespace ApirApir.UI
                 view.materialsDropArea.OnPayloadDropped = HandleDroppedBackToInventory;
             }
 
-            if (view.btnCraft != null) view.btnCraft.onClick.AddListener(HandleCraftClicked);
+            if (view.btnCraft != null)
+            {
+                view.btnCraft.onClick.RemoveListener(HandleCraftClicked);
+                view.btnCraft.onClick.AddListener(HandleCraftClicked);
+            }
+            if (view.btnExit != null)
+            {
+                view.btnExit.onClick.RemoveListener(HandleExitClicked);
+                view.btnExit.onClick.AddListener(HandleExitClicked);
+            }
             bound = true;
         }
 
@@ -153,6 +162,7 @@ namespace ApirApir.UI
         {
             if (!bound || view == null) return;
             if (view.btnCraft != null) view.btnCraft.onClick.RemoveListener(HandleCraftClicked);
+            if (view.btnExit != null) view.btnExit.onClick.RemoveListener(HandleExitClicked);
             if (view.materialsDropArea != null) view.materialsDropArea.OnPayloadDropped = null;
             for (int i = 0; i < view.ingredientSlots.Length; i++)
             {
@@ -294,6 +304,16 @@ namespace ApirApir.UI
             RefreshMaterialInventory();
             EvaluateRecipe();
             OnCraftExecuted?.Invoke(completedRecipe);
+        }
+
+        private void HandleExitClicked()
+        {
+            if (cardBuilderInstance != null)
+            {
+                cardBuilderInstance.SetActive(false);
+            }
+
+            gameObject.SetActive(false);
         }
 
         private void ClearIngredientSlots()

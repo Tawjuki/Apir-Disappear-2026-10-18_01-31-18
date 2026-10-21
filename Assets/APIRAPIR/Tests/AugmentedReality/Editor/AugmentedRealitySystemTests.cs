@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ApirApir.Battle;
+using ApirApir.Cards;
+using ApirApir.Crafting;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -449,6 +452,62 @@ namespace ApirApir.AugmentedReality.Tests
                 Is.EqualTo("com.unity.xr.management"));
             Assert.That(ARFoundationIntegrationStatus.AndroidProviderPackage,
                 Is.EqualTo("com.unity.xr.arcore"));
+        }
+
+        [Test]
+        public void CardToARRecord_PreservesHybridRegionsAndExactAuthoritativeStats()
+        {
+            CraftingCatalog crafting = DefaultCraftingCatalog.CreateAvailableAssetCatalog();
+            CraftablePartDefinition hybrid = crafting.Parts["part_epic_bakunawa_body_legs"];
+            var bodyAndLegs = new OwnedCardPart("hybrid-instance", OwnerA, hybrid);
+            var expectedStats = new CardEffectiveStats(
+                275,
+                44,
+                12.5f,
+                new Dictionary<string, float>(StringComparer.Ordinal) { ["guard"] = 3f },
+                new[] { "passive_bakunawa" },
+                8f,
+                6f);
+            var snapshot = new CardBuildSnapshot(
+                OwnerA,
+                "assembled-hybrid",
+                7,
+                false,
+                new CardPartSlotSnapshot(PartSlot.Head, null),
+                new CardPartSlotSnapshot(PartSlot.Body, bodyAndLegs),
+                new CardPartSlotSnapshot(PartSlot.Legs, null),
+                expectedStats);
+            var factory = new ARCardRecordFactory(crafting, DefaultSkillCatalog.Create());
+
+            Assert.That(factory.TryCreate(snapshot, OwnerA, "Bakunawa", Array.Empty<string>(),
+                out ARCardRecord record, out string error), Is.True, error);
+            Assert.That(record.body.definitionId, Is.EqualTo(hybrid.Id));
+            Assert.That(record.body.occupiedRegions,
+                Is.EqualTo((int)(PartEquipmentRegion.Body | PartEquipmentRegion.Legs)));
+            Assert.That(record.legs, Is.Null);
+            Assert.That(record.statistics.maximumHitPoints, Is.EqualTo(expectedStats.MaximumHitPoints));
+            Assert.That(record.statistics.effectiveAttack, Is.EqualTo(expectedStats.EffectiveAttack));
+            Assert.That(record.statistics.modifierIds, Is.EqualTo(new[] { "guard" }));
+            Assert.That(record.statistics.modifierValues, Is.EqualTo(new[] { 3f }));
+        }
+
+        [Test]
+        public void CardToARQrTexture_RoundTripsOnlyTheCardReference()
+        {
+            string expectedCardId = Id(77);
+            var codec = new ZXingQRCodeCodec();
+            Texture2D texture = codec.CreateCardIdTexture(expectedCardId, 256);
+            try
+            {
+                Assert.That(codec.TryDecode(
+                    texture.GetPixels32(), texture.width, texture.height, out string decodedCardId),
+                    Is.True);
+                Assert.That(decodedCardId, Is.EqualTo(expectedCardId));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(texture);
+            }
         }
 
         private static TestContext CreateContext(int maximumActiveCards = 10, string[] ids = null)

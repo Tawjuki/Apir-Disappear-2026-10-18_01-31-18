@@ -101,7 +101,7 @@ namespace ApirApir.AugmentedReality
                 return;
             }
 
-            trackedImageManager.trackablesChanged += HandleTrackablesChanged;
+            trackedImageManager.trackablesChanged.AddListener(HandleTrackablesChanged);
             subscribed = true;
         }
 
@@ -113,7 +113,7 @@ namespace ApirApir.AugmentedReality
                 return;
             }
 
-            trackedImageManager.trackablesChanged -= HandleTrackablesChanged;
+            trackedImageManager.trackablesChanged.RemoveListener(HandleTrackablesChanged);
             subscribed = false;
         }
 

@@ -12,5 +12,7 @@ EditorBuildSettings:
     path: Assets/Scenes/Lobby.unity
     guid: 9022d789ccfa52e4e9c54c2ce5764a08
   m_configObjects:
+    UnityEditor.XR.ARCore.ARCoreSettings: {fileID: 11400000, guid: 3f1fe1db07af88142bd6b421d59117ce, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+    com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: 3e25e1a5245b3e544b354e52395bc1b0, type: 2}
   m_UseUCBPForAssetBundles: 0

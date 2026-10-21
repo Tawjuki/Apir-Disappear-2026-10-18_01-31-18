@@ -101,6 +101,20 @@ namespace ApirApir.UI
             ApplyParts();
         }
 
+        public void ConfigureLayout(
+            Vector2 headPosition, Vector2 headDimensions,
+            Vector2 bodyPosition, Vector2 bodyDimensions,
+            Vector2 legsPosition, Vector2 legsDimensions)
+        {
+            headOffset = headPosition;
+            headSize = headDimensions;
+            bodyOffset = bodyPosition;
+            bodySize = bodyDimensions;
+            legsOffset = legsPosition;
+            legsSize = legsDimensions;
+            ApplyLayout();
+        }
+
         public void ClearParts()
         {
             SetParts(null, null, null);

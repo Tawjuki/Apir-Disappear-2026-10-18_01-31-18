@@ -500,7 +500,7 @@ namespace ApirApir.UI
     /// </summary>
     public static class PreparationDemoSession
     {
-        public const string PlayerId = "local-player";
+        public static string PlayerId { get; private set; } = "local-player";
         public const string MatchId = "local-preparation";
         public const string CardId = "local-card";
 
@@ -516,11 +516,16 @@ namespace ApirApir.UI
             Inventory = null;
             CraftingController = null;
             CardAssembly = null;
+            PlayerId = "local-player";
         }
 
         public static void EnsureInitialized()
         {
             if (Catalog != null) return;
+            string authenticatedPlayerId = ApirApir.Multiplayer.UnityAccountAuthenticationRuntime.PlayerId;
+            PlayerId = string.IsNullOrWhiteSpace(authenticatedPlayerId)
+                ? "local-player"
+                : authenticatedPlayerId.Trim();
             Catalog = DefaultCraftingCatalog.CreateAvailableAssetCatalog();
             Inventory = new PlayerCraftingInventory(PlayerId);
             var inventories = new PlayerCraftingInventoryCollection();

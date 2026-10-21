@@ -21,13 +21,14 @@ namespace ApirApir.Cards
             float criticalBonus = 0f;
             var modifiers = new Dictionary<string, float>(StringComparer.Ordinal);
             var passives = new List<string>();
+            var countedInstances = new HashSet<string>(StringComparer.Ordinal);
 
             if (equippedParts != null)
             {
                 for (int i = 0; i < equippedParts.Count; i++)
                 {
                     OwnedCardPart part = equippedParts[i];
-                    if (part == null)
+                    if (part == null || !countedInstances.Add(part.InstanceId))
                     {
                         continue;
                     }

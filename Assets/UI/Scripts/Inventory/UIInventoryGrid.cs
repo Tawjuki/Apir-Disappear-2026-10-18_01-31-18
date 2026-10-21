@@ -107,8 +107,9 @@ namespace ApirApir.UI.Inventory
             }
             else
             {
-                // Fallback: create dynamic slot if prefab not set
-                instance = new GameObject($"Slot_{index}");
+                // Functional fallback for prototype scenes that have not yet been
+                // assigned an authored inventory-slot prefab.
+                instance = new GameObject($"Slot_{index}", typeof(RectTransform));
                 instance.transform.SetParent(contentContainer, false);
             }
 

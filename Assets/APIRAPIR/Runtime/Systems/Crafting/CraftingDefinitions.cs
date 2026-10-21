@@ -123,7 +123,8 @@ namespace ApirApir.Crafting
             float visualOffsetX = 0f,
             float visualOffsetY = 0f,
             float visualScale = 1f,
-            int? visualLayerOrder = null)
+            int? visualLayerOrder = null,
+            PartEquipmentRegion occupiedRegions = PartEquipmentRegion.None)
         {
             if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(displayName) ||
                 string.IsNullOrWhiteSpace(characterId) || string.IsNullOrWhiteSpace(recipeId))
@@ -152,6 +153,18 @@ namespace ApirApir.Crafting
                 throw new ArgumentOutOfRangeException(nameof(visualScale));
             }
 
+            PartEquipmentRegion primaryRegion = GetRegion(slot);
+            PartEquipmentRegion resolvedRegions = occupiedRegions == PartEquipmentRegion.None
+                ? primaryRegion
+                : occupiedRegions;
+            const PartEquipmentRegion allRegions =
+                PartEquipmentRegion.Head | PartEquipmentRegion.Body | PartEquipmentRegion.Legs;
+            if ((resolvedRegions & primaryRegion) == 0 || (resolvedRegions & ~allRegions) != 0)
+            {
+                throw new CraftingConfigurationException(
+                    "A part must occupy its primary slot and only supported equipment regions.");
+            }
+
             Id = id;
             DisplayName = displayName;
             CharacterId = characterId;
@@ -172,6 +185,7 @@ namespace ApirApir.Crafting
             VisualOffsetY = visualOffsetY;
             VisualScale = visualScale;
             VisualLayerOrder = visualLayerOrder ?? GetDefaultLayerOrder(slot);
+            OccupiedRegions = resolvedRegions;
         }
 
         public string Id { get; }
@@ -196,12 +210,19 @@ namespace ApirApir.Crafting
         public float VisualOffsetY { get; }
         public float VisualScale { get; }
         public int VisualLayerOrder { get; }
+        public PartEquipmentRegion OccupiedRegions { get; }
+        public bool IsHybrid => (OccupiedRegions & (OccupiedRegions - 1)) != 0;
         public int MarketValue { get; }
         public ShopItemCategory Category => ShopItemCategory.CompletedPart;
         public ShopMaterialRarity? MaterialRarity => null;
         public PartSlot? CompletedPartSlot => Slot;
         public object InventoryDefinition => this;
         public bool IsSellable => false;
+
+        public bool Occupies(PartSlot slot)
+        {
+            return (OccupiedRegions & GetRegion(slot)) != 0;
+        }
 
         private static IReadOnlyDictionary<string, float> CopyModifiers(
             IReadOnlyDictionary<string, float> source)
@@ -272,6 +293,17 @@ namespace ApirApir.Crafting
                 case PartSlot.Legs: return 0;
                 case PartSlot.Body: return 1;
                 case PartSlot.Head: return 2;
+                default: throw new ArgumentOutOfRangeException(nameof(slot));
+            }
+        }
+
+        private static PartEquipmentRegion GetRegion(PartSlot slot)
+        {
+            switch (slot)
+            {
+                case PartSlot.Head: return PartEquipmentRegion.Head;
+                case PartSlot.Body: return PartEquipmentRegion.Body;
+                case PartSlot.Legs: return PartEquipmentRegion.Legs;
                 default: throw new ArgumentOutOfRangeException(nameof(slot));
             }
         }

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using ApirApir.Cards;
+using ApirApir.UI.DragDrop;
 
 namespace ApirApir.UI.CardBuilder
 {
@@ -24,12 +26,14 @@ namespace ApirApir.UI.CardBuilder
         [SerializeField] private Button removeLegsButton;
         [SerializeField] private Button clearCardButton;
         [SerializeField] private TextMeshProUGUI selectionSummary;
+        [SerializeField] private UIDropTarget cardDropTarget;
 
         private readonly List<UICardPartOption> generatedOptions = new List<UICardPartOption>();
 
         public event Action<CardBuilderPartOptionDefinition> PartSelected;
         public event Action<CardBuilderPartSlot> PartRemovalRequested;
         public event Action ClearRequested;
+        public event Action<string> PartDropped;
 
         public UICardPreview Preview => preview;
 
@@ -60,11 +64,13 @@ namespace ApirApir.UI.CardBuilder
         private void OnEnable()
         {
             AddButtonListeners();
+            BindCardDropTarget();
         }
 
         private void OnDisable()
         {
             RemoveButtonListeners();
+            if (cardDropTarget != null) cardDropTarget.OnPayloadDropped = null;
         }
 
         public void PopulateOptions(
@@ -105,6 +111,40 @@ namespace ApirApir.UI.CardBuilder
                 selectionSummary.text = selection.IsBlank
                     ? "Blank card — choose any Head, Body, or Legs."
                     : BuildSummary(selection);
+            }
+        }
+
+        public void Display(
+            CardBuildSnapshot snapshot,
+            Func<string, Sprite> spriteResolver)
+        {
+            if (snapshot == null) return;
+            Sprite head = snapshot.Head.IsEmpty ? null : spriteResolver?.Invoke(snapshot.Head.DefinitionId);
+            Sprite body = snapshot.Body.IsEmpty ? null : spriteResolver?.Invoke(snapshot.Body.DefinitionId);
+            Sprite legs = snapshot.Legs.IsEmpty ? null : spriteResolver?.Invoke(snapshot.Legs.DefinitionId);
+            if (preview != null)
+            {
+                preview.SetParts(head, body, legs);
+                preview.ApplyLayout();
+            }
+
+            for (int i = 0; i < generatedOptions.Count; i++)
+            {
+                CardBuilderPartOptionDefinition definition = generatedOptions[i].Definition;
+                bool selected = definition != null &&
+                    (definition.Id == snapshot.Head.InstanceId ||
+                     definition.Id == snapshot.Body.InstanceId ||
+                     definition.Id == snapshot.Legs.InstanceId);
+                generatedOptions[i].SetSelected(selected);
+            }
+
+            if (selectionSummary != null)
+            {
+                selectionSummary.text =
+                    $"HP {snapshot.Stats.MaximumHitPoints}   ATK {snapshot.Stats.EffectiveAttack}   " +
+                    $"ATK +{snapshot.Stats.AttackBonusPercent:0.#}%   " +
+                    $"SPD +{snapshot.Stats.SpeedBonusPercent:0.#}%   " +
+                    $"CRIT +{snapshot.Stats.CriticalChanceBonusPercent:0.#}%";
             }
         }
 
@@ -156,6 +196,32 @@ namespace ApirApir.UI.CardBuilder
             if (removeBodyButton != null) removeBodyButton.onClick.AddListener(RemoveBody);
             if (removeLegsButton != null) removeLegsButton.onClick.AddListener(RemoveLegs);
             if (clearCardButton != null) clearCardButton.onClick.AddListener(RequestClear);
+        }
+
+        private void BindCardDropTarget()
+        {
+            if (cardDropTarget == null && preview != null)
+            {
+                Image hitArea = preview.GetComponent<Image>();
+                if (hitArea == null)
+                {
+                    hitArea = preview.gameObject.AddComponent<Image>();
+                    hitArea.color = new Color(1f, 1f, 1f, 0f);
+                }
+                hitArea.raycastTarget = true;
+                cardDropTarget = preview.GetComponent<UIDropTarget>();
+                if (cardDropTarget == null) cardDropTarget = preview.gameObject.AddComponent<UIDropTarget>();
+            }
+
+            if (cardDropTarget != null)
+            {
+                cardDropTarget.AcceptedCategory = "Part";
+                cardDropTarget.OnPayloadDropped = payload =>
+                {
+                    if (payload != null && !string.IsNullOrWhiteSpace(payload.ItemId))
+                        PartDropped?.Invoke(payload.ItemId);
+                };
+            }
         }
 
         private void RemoveButtonListeners()

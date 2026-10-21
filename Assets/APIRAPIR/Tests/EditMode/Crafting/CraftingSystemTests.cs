@@ -12,6 +12,60 @@ namespace ApirApir.Crafting.Tests
     public sealed class CraftingSystemTests
     {
         [Test]
+        public void AvailableAssetCatalog_UsesThirteenMaterialsAndCorrectedBakunawaRecipes()
+        {
+            CraftingCatalog catalog = DefaultCraftingCatalog.CreateAvailableAssetCatalog();
+
+            Assert.That(catalog.Materials.Count, Is.EqualTo(13));
+            Assert.That(catalog.Materials["common_kandila"].Rarity, Is.EqualTo(MaterialRarity.Common));
+            Assert.That(catalog.Materials["rare_rosaryo"].Rarity, Is.EqualTo(MaterialRarity.Rare));
+            CraftingRecipe head = catalog.Recipes["recipe_epic_bakunawa_head"];
+            Assert.That(head.Requirements.Select(value => $"{value.MaterialId}:{value.Quantity}"),
+                Is.EquivalentTo(new[]
+                {
+                    "epic_ngipin_dragon:1", "rare_salamin:1", "common_bakal:2"
+                }));
+            CraftingRecipe hybrid = catalog.Recipes["recipe_epic_bakunawa_body_legs"];
+            Assert.That(hybrid.Requirements.Select(value => $"{value.MaterialId}:{value.Quantity}"),
+                Is.EquivalentTo(new[]
+                {
+                    "epic_lawas_dragon:1", "epic_kuko_dragon:1", "rare_tinta:3"
+                }));
+            Assert.That(hybrid.OutputPart.OccupiedRegions,
+                Is.EqualTo(PartEquipmentRegion.Body | PartEquipmentRegion.Legs));
+            Assert.That(catalog.Parts.Keys.Any(value => value.Contains("pari")), Is.False,
+                "Pari remains unregistered until authoritative rarity and stats exist.");
+        }
+
+        [Test]
+        public void ProductionInventory_CraftIsAtomicAndExposesSameOwnedPartToAssembly()
+        {
+            CraftingCatalog catalog = DefaultCraftingCatalog.CreateAvailableAssetCatalog();
+            var inventory = new PlayerCraftingInventory("player");
+            var inventories = new PlayerCraftingInventoryCollection();
+            Assert.That(inventories.Register(inventory), Is.True);
+            CraftingRecipe recipe = catalog.Recipes["recipe_common_magsasaka_head"];
+            foreach (MaterialRequirement requirement in recipe.Requirements)
+            {
+                inventory.TryAddMaterial(
+                    catalog.Materials[requirement.MaterialId], requirement.Quantity, out _);
+            }
+
+            var controller = new CraftingController(
+                "match", catalog, new FixedCraftingAuthority(true),
+                new FixedCraftingAccessPolicy(true), inventories, new GuidPartInstanceIdProvider());
+            CraftingResult result = controller.Craft(
+                new CraftingRequest("match", recipe.Id, "command"), "player");
+
+            Assert.That(result.Succeeded, Is.True);
+            Assert.That(recipe.Requirements.All(value =>
+                inventory.GetMaterialQuantity(value.MaterialId) == 0), Is.True);
+            Assert.That(inventory.TryGetOwnedPart(result.CreatedPart.InstanceId, out OwnedCardPart owned),
+                Is.True);
+            Assert.That(owned, Is.SameAs(result.CreatedPart));
+        }
+
+        [Test]
         public void Catalog_HasExactlyTwentyOneMaterialDefinitions()
         {
             CraftingCatalog catalog = DefaultCraftingCatalog.Create();

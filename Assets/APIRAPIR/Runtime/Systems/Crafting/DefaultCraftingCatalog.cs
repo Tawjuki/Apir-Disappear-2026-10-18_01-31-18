@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using ApirApir.Battle;
 
 namespace ApirApir.Crafting
@@ -23,6 +24,46 @@ namespace ApirApir.Crafting
             RegisterCommonRecipes(catalog, resolver);
             RegisterRareRecipes(catalog, resolver);
             RegisterEpicRecipes(catalog, resolver);
+            return catalog;
+        }
+
+        /// <summary>
+        /// Focused preparation catalog for the character artwork currently present in the
+        /// project. It keeps the established 33-part catalog intact while applying the
+        /// defense-day recipes from the current implementation brief. Pari is intentionally
+        /// not registered until an authoritative rarity/stat definition is supplied.
+        /// </summary>
+        public static CraftingCatalog CreateAvailableAssetCatalog(
+            ICraftingContentResolver resolver = null)
+        {
+            var catalog = new CraftingCatalog();
+            AddMaterial(catalog, resolver, "common_dayami", "Dayami", MaterialRarity.Common);
+            AddMaterial(catalog, resolver, "common_tali", "Tali", MaterialRarity.Common);
+            AddMaterial(catalog, resolver, "common_tela", "Tela", MaterialRarity.Common);
+            AddMaterial(catalog, resolver, "common_goma", "Goma", MaterialRarity.Common);
+            AddMaterial(catalog, resolver, "common_bakal", "Bakal", MaterialRarity.Common);
+            AddMaterial(catalog, resolver, "common_kandila", "Kandila", MaterialRarity.Common);
+            AddMaterial(catalog, resolver, "rare_salamin", "Salamin", MaterialRarity.Rare);
+            AddMaterial(catalog, resolver, "rare_tinta", "Tinta", MaterialRarity.Rare);
+            AddMaterial(catalog, resolver, "rare_tsapa", "Tsapa", MaterialRarity.Rare);
+            AddMaterial(catalog, resolver, "rare_rosaryo", "Rosaryo", MaterialRarity.Rare);
+            AddMaterial(catalog, resolver, "epic_ngipin_dragon", "Ngipin ng Dragon", MaterialRarity.Epic);
+            AddMaterial(catalog, resolver, "epic_lawas_dragon", "Lawas ng Dragon", MaterialRarity.Epic);
+            AddMaterial(catalog, resolver, "epic_kuko_dragon", "Kuko ng Dragon", MaterialRarity.Epic);
+
+            AddCharacter(catalog, resolver, "common_magsasaka", "Magsasaka", PartRarity.Common,
+                Req("common_dayami", 2, "common_tali", 1),
+                Req("common_tela", 3, "common_tali", 2),
+                Req("common_goma", 2, "common_tela", 1));
+            AddCharacter(catalog, resolver, "rare_abogado", "Abogado", PartRarity.Rare,
+                Req("rare_salamin", 2, "common_tela", 1),
+                Req("rare_tinta", 2, "rare_salamin", 1, "common_tela", 2),
+                Req("rare_tinta", 2, "common_goma", 1));
+
+            AddPart(catalog, resolver, "epic_bakunawa", "Bakunawa", PartSlot.Head,
+                PartRarity.Epic,
+                Req("epic_ngipin_dragon", 1, "rare_salamin", 1, "common_bakal", 2));
+            AddBakunawaBodyLegsHybrid(catalog, resolver);
             return catalog;
         }
 
@@ -173,6 +214,75 @@ namespace ApirApir.Crafting
                 characterDisplayName: characterDisplayName,
                 visualAssetId: partId);
             catalog.RegisterPartAndRecipe(part, new CraftingRecipe(recipeId, part, requirements));
+        }
+
+        private static void AddBakunawaBodyLegsHybrid(
+            CraftingCatalog catalog,
+            ICraftingContentResolver resolver)
+        {
+            const string partId = "part_epic_bakunawa_body_legs";
+            const string recipeId = "recipe_epic_bakunawa_body_legs";
+            PartDefinition definition = resolver?.ResolvePartDefinition(
+                partId, PartSlot.Body, PartRarity.Epic) ?? CreateBakunawaHybridDefinition();
+            var part = new CraftablePartDefinition(
+                partId,
+                "Bakunawa Body & Legs",
+                "epic_bakunawa",
+                PartSlot.Body,
+                PartRarity.Epic,
+                recipeId,
+                definition,
+                resolver?.ResolveMarketValue(partId) ?? 0,
+                characterDisplayName: "Bakunawa",
+                visualAssetId: partId,
+                visualLayerOrder: 1,
+                occupiedRegions: PartEquipmentRegion.Body | PartEquipmentRegion.Legs);
+            catalog.RegisterPartAndRecipe(part, new CraftingRecipe(
+                recipeId,
+                part,
+                Req("epic_lawas_dragon", 1, "epic_kuko_dragon", 1, "rare_tinta", 3)));
+        }
+
+        private static PartDefinition CreateBakunawaHybridDefinition()
+        {
+            PartDefinition body = DefaultPartDefinitionCatalog.GetRequired("part_epic_bakunawa_body");
+            PartDefinition legs = DefaultPartDefinitionCatalog.GetRequired("part_epic_bakunawa_legs");
+            var passiveModifiers = new List<IPassiveBattleModifier>(
+                body.PassiveModifiers.Count + legs.PassiveModifiers.Count);
+            passiveModifiers.AddRange(body.PassiveModifiers);
+            passiveModifiers.AddRange(legs.PassiveModifiers);
+            var passiveAbilities = new List<PartPassiveDefinition>(
+                body.PassiveAbilities.Count + legs.PassiveAbilities.Count);
+            var passiveIds = new HashSet<string>(StringComparer.Ordinal);
+            AddUniquePassives(body.PassiveAbilities, passiveAbilities, passiveIds);
+            AddUniquePassives(legs.PassiveAbilities, passiveAbilities, passiveIds);
+
+            return new PartDefinition(
+                "part_epic_bakunawa_body_legs",
+                PartSlot.Body,
+                PartRarity.Epic,
+                body.AdditionalHitPoints + legs.AdditionalHitPoints,
+                body.AttackBonusPercent + legs.AttackBonusPercent,
+                passiveModifiers,
+                body.SpeedBonusPercent + legs.SpeedBonusPercent,
+                body.CriticalChanceBonusPercent + legs.CriticalChanceBonusPercent,
+                body.DodgeChanceBonusPercent + legs.DodgeChanceBonusPercent,
+                body.HitPointBonusPercent + legs.HitPointBonusPercent,
+                passiveAbilities);
+        }
+
+        private static void AddUniquePassives(
+            IReadOnlyList<PartPassiveDefinition> source,
+            ICollection<PartPassiveDefinition> destination,
+            ISet<string> seen)
+        {
+            for (int i = 0; i < source.Count; i++)
+            {
+                if (seen.Add(source[i].Id))
+                {
+                    destination.Add(source[i]);
+                }
+            }
         }
 
         private static MaterialRequirement[] Req(params object[] values)

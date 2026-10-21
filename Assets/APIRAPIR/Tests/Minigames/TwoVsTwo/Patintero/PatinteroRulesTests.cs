@@ -45,6 +45,23 @@ namespace ApirApir.Patintero.Tests
         }
 
         [Test]
+        public void RunnerMovement_UsesConfiguredWorldSpaceCourtCenter()
+        {
+            settings.courtCenterXZ = new Vector2(2f, 3f);
+
+            Vector3 constrained = PatinteroRules.ConstrainToCourt(
+                new Vector3(100f, 1f, -100f),
+                PatinteroRole.Runner,
+                0f,
+                settings);
+
+            Assert.That(constrained.x, Is.EqualTo(7.5f).Within(0.001f));
+            Assert.That(constrained.z, Is.EqualTo(-5.5f).Within(0.001f));
+            Assert.That(settings.StartThresholdZ, Is.EqualTo(-4.75f).Within(0.001f));
+            Assert.That(settings.FarThresholdZ, Is.EqualTo(10.75f).Within(0.001f));
+        }
+
+        [Test]
         public void TayaMovement_RemainsOnAssignedLine()
         {
             Vector3 moved = PatinteroRules.MoveAndConstrain(

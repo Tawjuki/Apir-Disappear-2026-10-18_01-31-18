@@ -4,6 +4,16 @@ using UnityEngine;
 namespace ApirApir.UI.Inventory
 {
     [Serializable]
+    public sealed class UIItemSpriteBinding
+    {
+        [SerializeField] private string itemId = string.Empty;
+        [SerializeField] private Sprite sprite;
+
+        public string ItemId => itemId;
+        public Sprite Sprite => sprite;
+    }
+
+    [Serializable]
     public sealed class UIInventoryItemData
     {
         public string id;

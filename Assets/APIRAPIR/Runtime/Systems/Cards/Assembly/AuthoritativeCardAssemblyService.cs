@@ -168,9 +168,21 @@ namespace ApirApir.Cards
                 return Reject(CardAssemblyFailure.AlreadyEquipped, owner, card, build, slot, instanceId);
             }
 
-            build.Parts.TryGetValue(slot, out OwnedCardPart previous);
-            if (previous != null)
+            var replaced = new List<OwnedCardPart>();
+            var keysToRemove = new List<PartSlot>();
+            foreach (KeyValuePair<PartSlot, OwnedCardPart> entry in build.Parts)
             {
+                if ((entry.Value.Definition.OccupiedRegions & part.Definition.OccupiedRegions) != 0)
+                {
+                    keysToRemove.Add(entry.Key);
+                    replaced.Add(entry.Value);
+                }
+            }
+
+            for (int i = 0; i < keysToRemove.Count; i++)
+            {
+                OwnedCardPart previous = build.Parts[keysToRemove[i]];
+                build.Parts.Remove(keysToRemove[i]);
                 previous.SetEquipped(false);
                 partLocations.Remove(previous.InstanceId);
             }
@@ -181,7 +193,7 @@ namespace ApirApir.Cards
             build.Revision++;
             Recalculate(build);
 
-            Publish(build, previous == null ? GetEquippedEvent(slot) : CardAssemblyEventType.PartReplaced,
+            Publish(build, replaced.Count == 0 ? GetEquippedEvent(slot) : CardAssemblyEventType.PartReplaced,
                 slot, instanceId);
             PublishChanged(build);
             return CardAssemblyOperationResult.Success(CreateSnapshot(build));
@@ -224,12 +236,27 @@ namespace ApirApir.Cards
                 return Reject(failure, owner, card, build, slot);
             }
 
-            if (!build.Parts.TryGetValue(slot, out OwnedCardPart part))
+            PartSlot primarySlot = slot;
+            if (!build.Parts.TryGetValue(primarySlot, out OwnedCardPart part))
             {
-                return CardAssemblyOperationResult.Success(CreateSnapshot(build));
+                part = null;
+                foreach (KeyValuePair<PartSlot, OwnedCardPart> entry in build.Parts)
+                {
+                    if (entry.Value.Definition.Occupies(slot))
+                    {
+                        primarySlot = entry.Key;
+                        part = entry.Value;
+                        break;
+                    }
+                }
+
+                if (part == null)
+                {
+                    return CardAssemblyOperationResult.Success(CreateSnapshot(build));
+                }
             }
 
-            build.Parts.Remove(slot);
+            build.Parts.Remove(primarySlot);
             partLocations.Remove(part.InstanceId);
             part.SetEquipped(false);
             build.Revision++;
@@ -266,15 +293,19 @@ namespace ApirApir.Cards
             }
 
             var instances = new HashSet<string>(StringComparer.Ordinal);
+            PartEquipmentRegion occupiedRegions = PartEquipmentRegion.None;
             foreach (KeyValuePair<PartSlot, OwnedCardPart> entry in build.Parts)
             {
                 OwnedCardPart part = entry.Value;
                 if (part == null || part.Definition == null || part.Definition.Slot != entry.Key ||
                     !string.Equals(part.OwnerPlayerId, build.OwnerPlayerId, StringComparison.Ordinal) ||
-                    !instances.Add(part.InstanceId) || !part.IsEquipped)
+                    !instances.Add(part.InstanceId) || !part.IsEquipped ||
+                    (occupiedRegions & part.Definition.OccupiedRegions) != 0)
                 {
                     return false;
                 }
+
+                occupiedRegions |= part.Definition.OccupiedRegions;
             }
 
             return true;

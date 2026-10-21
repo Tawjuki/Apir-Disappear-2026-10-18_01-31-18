@@ -15,8 +15,8 @@ namespace ApirApir.Patintero
                 return position;
             }
 
-            float minX = -settings.HalfWidth + settings.playerRadius;
-            float maxX = settings.HalfWidth - settings.playerRadius;
+            float minX = settings.MinimumX + settings.playerRadius;
+            float maxX = settings.MaximumX - settings.playerRadius;
             position.x = Mathf.Clamp(position.x, minX, maxX);
 
             if (role == PatinteroRole.Taya)
@@ -25,8 +25,8 @@ namespace ApirApir.Patintero
             }
             else
             {
-                float minZ = -settings.HalfLength + settings.playerRadius;
-                float maxZ = settings.HalfLength - settings.playerRadius;
+                float minZ = settings.MinimumZ + settings.playerRadius;
+                float maxZ = settings.MaximumZ - settings.playerRadius;
                 position.z = Mathf.Clamp(position.z, minZ, maxZ);
             }
 

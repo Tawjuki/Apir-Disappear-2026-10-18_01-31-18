@@ -17,6 +17,7 @@ namespace ApirApir.UI.CardBuilder
         [SerializeField] private string displayName = string.Empty;
         [SerializeField] private CardBuilderPartSlot slot;
         [SerializeField] private Sprite sprite;
+        [SerializeField] private string partDefinitionId = string.Empty;
 
         public CardBuilderPartOptionDefinition(
             string id,
@@ -28,13 +29,29 @@ namespace ApirApir.UI.CardBuilder
             this.displayName = displayName ?? string.Empty;
             this.slot = slot;
             this.sprite = sprite;
+            partDefinitionId = this.id;
+        }
+
+        public CardBuilderPartOptionDefinition(
+            string instanceId,
+            string definitionId,
+            string displayName,
+            CardBuilderPartSlot slot,
+            Sprite sprite)
+        {
+            id = instanceId ?? string.Empty;
+            partDefinitionId = definitionId ?? string.Empty;
+            this.displayName = displayName ?? string.Empty;
+            this.slot = slot;
+            this.sprite = sprite;
         }
 
         public string Id => id;
         public string DisplayName => displayName;
         public CardBuilderPartSlot Slot => slot;
         public Sprite Sprite => sprite;
-        public bool IsSelectable => sprite != null;
+        public string PartDefinitionId => string.IsNullOrEmpty(partDefinitionId) ? id : partDefinitionId;
+        public bool IsSelectable => !string.IsNullOrWhiteSpace(id);
     }
 
     public readonly struct CardBuilderPartSelection
@@ -49,7 +66,7 @@ namespace ApirApir.UI.CardBuilder
         public string OptionId { get; }
         public string DisplayName { get; }
         public Sprite Sprite { get; }
-        public bool IsEmpty => Sprite == null;
+        public bool IsEmpty => string.IsNullOrEmpty(OptionId);
     }
 
     /// <summary>

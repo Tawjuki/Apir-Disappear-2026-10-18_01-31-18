@@ -12,9 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f6d4a5adfdb96f42b6d7bfa2c6f8450, type: 3}
   m_Name: PatinteroSettings
   m_EditorClassIdentifier: ApirApir.Patintero::ApirApir.Patintero.PatinteroSettings
-  courtWidth: 12
-  courtLength: 18
-  playerRadius: 0.45
+  courtWidth: 15
+  courtLength: 25
+  courtCenterXZ: {x: 0, y: 0.34}
+  playerRadius: 0.5
   endZoneDepth: 1.25
   guardingLineZ:
   - 0

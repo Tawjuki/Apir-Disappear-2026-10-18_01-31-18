@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ApirApir.Battle;
+using ApirApir.Crafting;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -38,6 +39,7 @@ namespace ApirApir.Cards
             public float HeadY;
             public float HeadScale;
             public int HeadOrder;
+            public byte HeadRegions;
             public string BodyInstance;
             public string BodyDefinition;
             public string BodyVisual;
@@ -47,6 +49,7 @@ namespace ApirApir.Cards
             public float BodyY;
             public float BodyScale;
             public int BodyOrder;
+            public byte BodyRegions;
             public string LegsInstance;
             public string LegsDefinition;
             public string LegsVisual;
@@ -56,6 +59,7 @@ namespace ApirApir.Cards
             public float LegsY;
             public float LegsScale;
             public int LegsOrder;
+            public byte LegsRegions;
             public int HitPoints;
             public int Attack;
             public float AttackPercent;
@@ -278,6 +282,7 @@ namespace ApirApir.Cards
                 HeadY = snapshot.Head.VisualOffsetY,
                 HeadScale = snapshot.Head.VisualScale,
                 HeadOrder = snapshot.Head.VisualLayerOrder,
+                HeadRegions = (byte)snapshot.Head.OccupiedRegions,
                 BodyInstance = snapshot.Body.InstanceId,
                 BodyDefinition = snapshot.Body.DefinitionId,
                 BodyVisual = snapshot.Body.VisualAssetId,
@@ -287,6 +292,7 @@ namespace ApirApir.Cards
                 BodyY = snapshot.Body.VisualOffsetY,
                 BodyScale = snapshot.Body.VisualScale,
                 BodyOrder = snapshot.Body.VisualLayerOrder,
+                BodyRegions = (byte)snapshot.Body.OccupiedRegions,
                 LegsInstance = snapshot.Legs.InstanceId,
                 LegsDefinition = snapshot.Legs.DefinitionId,
                 LegsVisual = snapshot.Legs.VisualAssetId,
@@ -296,6 +302,7 @@ namespace ApirApir.Cards
                 LegsY = snapshot.Legs.VisualOffsetY,
                 LegsScale = snapshot.Legs.VisualScale,
                 LegsOrder = snapshot.Legs.VisualLayerOrder,
+                LegsRegions = (byte)snapshot.Legs.OccupiedRegions,
                 HitPoints = snapshot.Stats.MaximumHitPoints,
                 Attack = snapshot.Stats.EffectiveAttack,
                 AttackPercent = snapshot.Stats.AttackBonusPercent,
@@ -345,13 +352,16 @@ namespace ApirApir.Cards
                 payload.Locked,
                 CreateSlot(PartSlot.Head, payload.HeadInstance, payload.HeadDefinition,
                     payload.HeadVisual, payload.HeadMaintenance, payload.HeadMaximum,
-                    payload.HeadX, payload.HeadY, payload.HeadScale, payload.HeadOrder),
+                    payload.HeadX, payload.HeadY, payload.HeadScale, payload.HeadOrder,
+                    (PartEquipmentRegion)payload.HeadRegions),
                 CreateSlot(PartSlot.Body, payload.BodyInstance, payload.BodyDefinition,
                     payload.BodyVisual, payload.BodyMaintenance, payload.BodyMaximum,
-                    payload.BodyX, payload.BodyY, payload.BodyScale, payload.BodyOrder),
+                    payload.BodyX, payload.BodyY, payload.BodyScale, payload.BodyOrder,
+                    (PartEquipmentRegion)payload.BodyRegions),
                 CreateSlot(PartSlot.Legs, payload.LegsInstance, payload.LegsDefinition,
                     payload.LegsVisual, payload.LegsMaintenance, payload.LegsMaximum,
-                    payload.LegsX, payload.LegsY, payload.LegsScale, payload.LegsOrder),
+                    payload.LegsX, payload.LegsY, payload.LegsScale, payload.LegsOrder,
+                    (PartEquipmentRegion)payload.LegsRegions),
                 new CardEffectiveStats(
                     payload.HitPoints,
                     payload.Attack,
@@ -373,42 +383,52 @@ namespace ApirApir.Cards
             float offsetX,
             float offsetY,
             float scale,
-            int order)
+            int order,
+            PartEquipmentRegion occupiedRegions)
         {
             return CardPartSlotSnapshot.FromSerialized(
                 slot, instanceId, definitionId, visualId, maintenance, maximum,
-                offsetX, offsetY, scale, order);
+                offsetX, offsetY, scale, order, occupiedRegions);
         }
 
         private static bool ValidatePayload(SnapshotPayload value)
         {
             return value != null && IsBounded(value.Owner) && IsBounded(value.Card) &&
                    value.Revision >= 0 && value.HitPoints > 0 && value.Attack >= 0 &&
-                   IsValidSlot(value.HeadInstance, value.HeadDefinition, value.HeadVisual,
-                       value.HeadMaintenance, value.HeadMaximum, value.HeadScale) &&
-                   IsValidSlot(value.BodyInstance, value.BodyDefinition, value.BodyVisual,
-                       value.BodyMaintenance, value.BodyMaximum, value.BodyScale) &&
-                   IsValidSlot(value.LegsInstance, value.LegsDefinition, value.LegsVisual,
-                       value.LegsMaintenance, value.LegsMaximum, value.LegsScale);
+                   IsValidSlot(PartSlot.Head, value.HeadInstance, value.HeadDefinition, value.HeadVisual,
+                       value.HeadMaintenance, value.HeadMaximum, value.HeadScale, value.HeadRegions) &&
+                   IsValidSlot(PartSlot.Body, value.BodyInstance, value.BodyDefinition, value.BodyVisual,
+                       value.BodyMaintenance, value.BodyMaximum, value.BodyScale, value.BodyRegions) &&
+                   IsValidSlot(PartSlot.Legs, value.LegsInstance, value.LegsDefinition, value.LegsVisual,
+                       value.LegsMaintenance, value.LegsMaximum, value.LegsScale, value.LegsRegions);
         }
 
         private static bool IsValidSlot(
+            PartSlot slot,
             string instanceId,
             string definitionId,
             string visualId,
             int maintenance,
             int maximum,
-            float scale)
+            float scale,
+            byte regionsValue)
         {
             bool empty = string.IsNullOrEmpty(instanceId) && string.IsNullOrEmpty(definitionId) &&
                          string.IsNullOrEmpty(visualId);
             if (empty)
             {
-                return maintenance == 0 && maximum == 0;
+                return maintenance == 0 && maximum == 0 && regionsValue == 0;
             }
 
+            var regions = (PartEquipmentRegion)regionsValue;
+            const PartEquipmentRegion all =
+                PartEquipmentRegion.Head | PartEquipmentRegion.Body | PartEquipmentRegion.Legs;
+            PartEquipmentRegion primary = slot == PartSlot.Head
+                ? PartEquipmentRegion.Head
+                : slot == PartSlot.Body ? PartEquipmentRegion.Body : PartEquipmentRegion.Legs;
             return IsBounded(instanceId) && IsBounded(definitionId) && IsBounded(visualId) &&
-                   maximum > 0 && maintenance >= 0 && maintenance <= maximum && scale > 0f;
+                   maximum > 0 && maintenance >= 0 && maintenance <= maximum && scale > 0f &&
+                   (regions & primary) != 0 && (regions & ~all) == 0;
         }
 
         private static ClientRpcParams CreateRpcParams(IReadOnlyList<ulong> recipients)

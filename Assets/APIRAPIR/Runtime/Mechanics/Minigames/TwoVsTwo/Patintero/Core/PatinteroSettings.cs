@@ -8,6 +8,8 @@ namespace ApirApir.Patintero
         [Header("Court")]
         [Min(4f)] public float courtWidth = 12f;
         [Min(6f)] public float courtLength = 18f;
+        [Tooltip("World-space X/Z center of the playable court.")]
+        public Vector2 courtCenterXZ = Vector2.zero;
         [Min(0.25f)] public float playerRadius = 0.45f;
         [Min(0.25f)] public float endZoneDepth = 1.25f;
         public float[] guardingLineZ = { 0f };
@@ -32,8 +34,12 @@ namespace ApirApir.Patintero
 
         public float HalfWidth => courtWidth * 0.5f;
         public float HalfLength => courtLength * 0.5f;
-        public float StartThresholdZ => -HalfLength + endZoneDepth;
-        public float FarThresholdZ => HalfLength - endZoneDepth;
+        public float MinimumX => courtCenterXZ.x - HalfWidth;
+        public float MaximumX => courtCenterXZ.x + HalfWidth;
+        public float MinimumZ => courtCenterXZ.y - HalfLength;
+        public float MaximumZ => courtCenterXZ.y + HalfLength;
+        public float StartThresholdZ => MinimumZ + endZoneDepth;
+        public float FarThresholdZ => MaximumZ - endZoneDepth;
         public float MovementAcceleration => acceleration > 0f ? acceleration : 28f;
         public float MovementDeceleration => deceleration > 0f ? deceleration : 36f;
         public float RotationSpeed => rotationSpeedDegrees > 0f ? rotationSpeedDegrees : 720f;

@@ -56,6 +56,47 @@ namespace ApirApir.CardTests
         }
 
         [Test]
+        public void BakunawaBodyLegsHybrid_OccupiesTwoRegionsButCountsOnce()
+        {
+            CraftingCatalog catalog = DefaultCraftingCatalog.CreateAvailableAssetCatalog();
+            var inventory = new PlayerCraftingInventory("alice");
+            var inventories = new PlayerCraftingInventoryCollection();
+            Assert.That(inventories.Register(inventory), Is.True);
+            CraftingRecipe recipe = catalog.Recipes["recipe_epic_bakunawa_body_legs"];
+            foreach (MaterialRequirement requirement in recipe.Requirements)
+            {
+                inventory.TryAddMaterial(
+                    catalog.Materials[requirement.MaterialId], requirement.Quantity, out _);
+            }
+
+            var crafting = new CraftingController(
+                "match", catalog, new FixedCraftingAuthority(true),
+                new FixedCraftingAccessPolicy(true), inventories, new GuidPartInstanceIdProvider());
+            CraftingResult crafted = crafting.Craft(
+                new CraftingRequest("match", recipe.Id, "craft-hybrid"), "alice");
+            Assert.That(crafted.Succeeded, Is.True);
+            Assert.That(crafted.CreatedPart.Definition.OccupiedRegions,
+                Is.EqualTo(PartEquipmentRegion.Body | PartEquipmentRegion.Legs));
+
+            var service = new AuthoritativeCardAssemblyService(
+                inventories, new FixedCardAssemblyAccessPolicy(true),
+                new FixedCardAssemblyAuthority(true));
+            CardBuildSnapshot blank = service.InitializeCard("alice", "card").Snapshot;
+            CardAssemblyOperationResult equipped = service.EquipBody(
+                "alice", "card", crafted.CreatedPart.InstanceId, blank.Revision, "equip-hybrid");
+
+            Assert.That(equipped.Succeeded, Is.True);
+            Assert.That(equipped.Snapshot.Body.DefinitionId,
+                Is.EqualTo("part_epic_bakunawa_body_legs"));
+            Assert.That(equipped.Snapshot.Legs.IsEmpty, Is.True,
+                "The hybrid must not create a phantom legs item.");
+            Assert.That(service.GetEquippedParts("alice", "card").Count, Is.EqualTo(1));
+            Assert.That(equipped.Snapshot.Stats.MaximumHitPoints, Is.EqualTo(215));
+            Assert.That(equipped.Snapshot.Stats.AttackBonusPercent, Is.EqualTo(74f));
+            Assert.That(equipped.Snapshot.Stats.EffectiveAttack, Is.EqualTo(17));
+        }
+
+        [Test]
         public void PercentageHitPoints_MatchBetweenAssemblyAndBattle()
         {
             CraftingCatalog catalog = DefaultCraftingCatalog.Create();
@@ -457,6 +498,11 @@ namespace ApirApir.CardTests
             public bool TryGetOwnedPart(string instanceId, out OwnedCardPart part)
             {
                 return Parts.TryGetValue(instanceId ?? string.Empty, out part);
+            }
+
+            public IReadOnlyList<OwnedCardPart> GetOwnedParts()
+            {
+                return Parts.Values.ToList().AsReadOnly();
             }
         }
 

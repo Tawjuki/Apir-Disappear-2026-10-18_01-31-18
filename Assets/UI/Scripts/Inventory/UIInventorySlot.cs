@@ -30,6 +30,7 @@ namespace ApirApir.UI.Inventory
 
         private void Awake()
         {
+            EnsureRuntimeVisuals();
             if (dragSource == null) dragSource = GetComponent<UIDragSource>();
             if (dragSource == null) dragSource = gameObject.AddComponent<UIDragSource>();
             if (selectionOutline == null) selectionOutline = GetComponent<Outline>();
@@ -48,10 +49,12 @@ namespace ApirApir.UI.Inventory
 
             gameObject.SetActive(true);
             if (nameLabel != null) nameLabel.text = data.displayName;
-            if (iconImage != null && data.icon != null)
+            if (iconImage != null)
             {
                 iconImage.sprite = data.icon;
-                iconImage.color = Color.white;
+                iconImage.color = data.icon != null
+                    ? Color.white
+                    : RarityColor(data.rarity);
             }
             RefreshDisplay();
             SetSelected(false);
@@ -97,6 +100,93 @@ namespace ApirApir.UI.Inventory
                 ItemData.icon,
                 1,
                 ItemData.category);
+        }
+
+        /// <summary>
+        /// Builds a small, usable slot only when an authored prefab has not supplied
+        /// visual references. This keeps the inventory functional in prototype scenes
+        /// while allowing a proper prefab to replace every generated visual later.
+        /// </summary>
+        private void EnsureRuntimeVisuals()
+        {
+            RectTransform root = transform as RectTransform;
+            if (root == null) return;
+
+            Image background = GetComponent<Image>();
+            if (background == null)
+            {
+                background = gameObject.AddComponent<Image>();
+                background.color = new Color(0.93f, 0.88f, 0.72f, 0.95f);
+            }
+
+            if (selectionOutline == null)
+            {
+                selectionOutline = GetComponent<Outline>();
+                if (selectionOutline == null) selectionOutline = gameObject.AddComponent<Outline>();
+                selectionOutline.effectColor = normalBorder;
+                selectionOutline.effectDistance = new Vector2(1f, -1f);
+            }
+
+            if (iconImage == null)
+            {
+                RectTransform icon = CreateRect("Icon", root);
+                icon.anchorMin = new Vector2(0.08f, 0.32f);
+                icon.anchorMax = new Vector2(0.92f, 0.95f);
+                icon.offsetMin = icon.offsetMax = Vector2.zero;
+                iconImage = icon.gameObject.AddComponent<Image>();
+                iconImage.preserveAspect = true;
+                iconImage.raycastTarget = false;
+            }
+
+            if (nameLabel == null)
+            {
+                nameLabel = CreateLabel("Name", root, new Vector2(0.04f, 0.08f),
+                    new Vector2(0.96f, 0.34f), 17f, TextAlignmentOptions.Center);
+            }
+
+            if (quantityLabel == null)
+            {
+                quantityLabel = CreateLabel("Quantity", root, new Vector2(0.58f, 0.70f),
+                    new Vector2(0.98f, 0.98f), 18f, TextAlignmentOptions.TopRight);
+            }
+        }
+
+        private static RectTransform CreateRect(string objectName, RectTransform parent)
+        {
+            var child = new GameObject(objectName, typeof(RectTransform));
+            var rect = (RectTransform)child.transform;
+            rect.SetParent(parent, false);
+            return rect;
+        }
+
+        private static TextMeshProUGUI CreateLabel(
+            string objectName,
+            RectTransform parent,
+            Vector2 anchorMin,
+            Vector2 anchorMax,
+            float fontSize,
+            TextAlignmentOptions alignment)
+        {
+            RectTransform rect = CreateRect(objectName, parent);
+            rect.anchorMin = anchorMin;
+            rect.anchorMax = anchorMax;
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+            var label = rect.gameObject.AddComponent<TextMeshProUGUI>();
+            label.fontSize = fontSize;
+            label.color = new Color(0.18f, 0.11f, 0.07f, 1f);
+            label.alignment = alignment;
+            label.textWrappingMode = TextWrappingModes.NoWrap;
+            label.raycastTarget = false;
+            return label;
+        }
+
+        private static Color RarityColor(string rarity)
+        {
+            if (string.Equals(rarity, "Epic", StringComparison.OrdinalIgnoreCase))
+                return new Color(0.62f, 0.32f, 0.78f, 1f);
+            if (string.Equals(rarity, "Rare", StringComparison.OrdinalIgnoreCase))
+                return new Color(0.28f, 0.52f, 0.78f, 1f);
+            return new Color(0.68f, 0.62f, 0.48f, 1f);
         }
     }
 }

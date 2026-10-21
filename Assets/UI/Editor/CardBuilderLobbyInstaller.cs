@@ -298,13 +298,18 @@ namespace ApirApir.UI.Editor
             string fileSuffix)
         {
             string[] characters = { "abogado", "magsasaka", "pari" };
+            string[] rarities = { "Rare", "Common", "Rare" };
+            string category = slot == CardBuilderPartSlot.Head
+                ? "Head"
+                : slot == CardBuilderPartSlot.Body ? "Body" : "Legs";
             return characters
-                .Select(character => new CardBuilderPartOptionDefinition(
+                .Select((character, index) => new CardBuilderPartOptionDefinition(
                     $"{character}_{fileSuffix}",
                     ObjectNames.NicifyVariableName(character),
                     slot,
-                    LoadFirstSprite($"Assets/Art/Characters/{character}/{character} {fileSuffix}.png")))
-                .Where(option => option.IsSelectable)
+                    LoadFirstSprite(
+                        $"Assets/Art/Parts/{category}/{rarities[index]}/{character} {fileSuffix}.png")))
+                .Where(option => option.Sprite != null)
                 .ToArray();
         }
 

@@ -2,6 +2,15 @@ using System;
 
 namespace ApirApir.Crafting
 {
+    [Flags]
+    public enum PartEquipmentRegion : byte
+    {
+        None = 0,
+        Head = 1 << 0,
+        Body = 1 << 1,
+        Legs = 1 << 2
+    }
+
     public enum MaterialRarity : byte
     {
         Common,

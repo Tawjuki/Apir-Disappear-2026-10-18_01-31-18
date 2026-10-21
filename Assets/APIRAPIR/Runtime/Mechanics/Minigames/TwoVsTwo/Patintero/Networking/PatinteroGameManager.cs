@@ -502,8 +502,8 @@ namespace ApirApir.Patintero
         private Vector3 GetRunnerSpawn(int index, int runnerCount)
         {
             float spacing = settings.courtWidth / (runnerCount + 1f);
-            float x = -settings.HalfWidth + spacing * (index + 1f);
-            float z = -settings.HalfLength + settings.endZoneDepth * 0.5f;
+            float x = settings.MinimumX + spacing * (index + 1f);
+            float z = settings.MinimumZ + settings.endZoneDepth * 0.5f;
             return new Vector3(x, 1f, z);
         }
 
@@ -511,10 +511,12 @@ namespace ApirApir.Patintero
         {
             if (tayaCount <= 1)
             {
-                return 0f;
+                return settings.courtCenterXZ.x;
             }
 
-            return Mathf.Lerp(-settings.HalfWidth * 0.35f, settings.HalfWidth * 0.35f,
+            return settings.courtCenterXZ.x + Mathf.Lerp(
+                -settings.HalfWidth * 0.35f,
+                settings.HalfWidth * 0.35f,
                 index / (tayaCount - 1f));
         }
 

@@ -88,6 +88,7 @@ namespace ApirApir.Cards
             VisualOffsetY = part.Definition.VisualOffsetY;
             VisualScale = part.Definition.VisualScale;
             VisualLayerOrder = part.Definition.VisualLayerOrder;
+            OccupiedRegions = part.Definition.OccupiedRegions;
         }
 
         public PartSlot Slot { get; }
@@ -100,6 +101,7 @@ namespace ApirApir.Cards
         public float VisualOffsetY { get; }
         public float VisualScale { get; } = 1f;
         public int VisualLayerOrder { get; }
+        public PartEquipmentRegion OccupiedRegions { get; }
         public bool IsEmpty => InstanceId.Length == 0;
 
         internal static CardPartSlotSnapshot FromSerialized(
@@ -112,7 +114,8 @@ namespace ApirApir.Cards
             float visualOffsetX,
             float visualOffsetY,
             float visualScale,
-            int visualLayerOrder)
+            int visualLayerOrder,
+            PartEquipmentRegion occupiedRegions = PartEquipmentRegion.None)
         {
             return new CardPartSlotSnapshot(
                 slot,
@@ -124,7 +127,10 @@ namespace ApirApir.Cards
                 visualOffsetX,
                 visualOffsetY,
                 visualScale,
-                visualLayerOrder);
+                visualLayerOrder,
+                occupiedRegions == PartEquipmentRegion.None
+                    ? RegionFor(slot)
+                    : occupiedRegions);
         }
 
         private CardPartSlotSnapshot(
@@ -137,7 +143,8 @@ namespace ApirApir.Cards
             float visualOffsetX,
             float visualOffsetY,
             float visualScale,
-            int visualLayerOrder)
+            int visualLayerOrder,
+            PartEquipmentRegion occupiedRegions)
         {
             Slot = slot;
             InstanceId = instanceId;
@@ -149,6 +156,18 @@ namespace ApirApir.Cards
             VisualOffsetY = visualOffsetY;
             VisualScale = visualScale;
             VisualLayerOrder = visualLayerOrder;
+            OccupiedRegions = occupiedRegions;
+        }
+
+        private static PartEquipmentRegion RegionFor(PartSlot slot)
+        {
+            switch (slot)
+            {
+                case PartSlot.Head: return PartEquipmentRegion.Head;
+                case PartSlot.Body: return PartEquipmentRegion.Body;
+                case PartSlot.Legs: return PartEquipmentRegion.Legs;
+                default: return PartEquipmentRegion.None;
+            }
         }
     }
 

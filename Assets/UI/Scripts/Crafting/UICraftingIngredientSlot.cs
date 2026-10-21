@@ -29,13 +29,15 @@ namespace ApirApir.UI
         public string CurrentItemId { get; private set; }
         public Sprite CurrentIcon { get; private set; }
         public string CurrentDisplayName { get; private set; }
+        public int CurrentQuantity { get; private set; }
         public bool IsOccupied => !string.IsNullOrEmpty(CurrentItemId);
 
         public Action<int, UIDragPayload> OnIngredientAssigned { get; set; }
-        public Action<int, string> OnIngredientRemoved { get; set; }
+        public Action<int, string, int> OnIngredientRemoved { get; set; }
 
         private void Awake()
         {
+            EnsureRuntimeVisuals();
             if (dropTarget == null) dropTarget = GetComponent<UIDropTarget>();
             if (dropTarget == null) dropTarget = gameObject.AddComponent<UIDropTarget>();
 
@@ -53,11 +55,12 @@ namespace ApirApir.UI
             Clear();
         }
 
-        public void AssignIngredient(string itemId, string displayName, Sprite icon)
+        public void AssignIngredient(string itemId, string displayName, Sprite icon, int quantity = 1)
         {
             CurrentItemId = itemId;
             CurrentDisplayName = displayName;
             CurrentIcon = icon;
+            CurrentQuantity = Mathf.Max(1, quantity);
 
             if (iconImage != null)
             {
@@ -68,7 +71,7 @@ namespace ApirApir.UI
 
             if (labelText != null)
             {
-                labelText.text = displayName;
+                labelText.text = $"{displayName} x{CurrentQuantity}";
                 labelText.gameObject.SetActive(true);
             }
 
@@ -83,6 +86,7 @@ namespace ApirApir.UI
             CurrentItemId = null;
             CurrentDisplayName = null;
             CurrentIcon = null;
+            CurrentQuantity = 0;
 
             if (iconImage != null)
             {
@@ -107,8 +111,9 @@ namespace ApirApir.UI
             if (IsOccupied)
             {
                 string removedId = CurrentItemId;
+                int removedQuantity = CurrentQuantity;
                 Clear();
-                OnIngredientRemoved?.Invoke(slotIndex, removedId);
+                OnIngredientRemoved?.Invoke(slotIndex, removedId, removedQuantity);
             }
         }
 
@@ -122,7 +127,8 @@ namespace ApirApir.UI
         {
             if (!IsOccupied) return null;
             // Drag out of slot to return to materials
-            return new UIDragPayload(this, CurrentItemId, CurrentDisplayName, CurrentIcon, 1, "Material");
+            return new UIDragPayload(
+                this, CurrentItemId, CurrentDisplayName, CurrentIcon, CurrentQuantity, "Material");
         }
 
         private void HandleDragEnded(bool droppedOnValidTarget)
@@ -131,9 +137,66 @@ namespace ApirApir.UI
             if (droppedOnValidTarget && IsOccupied)
             {
                 string removedId = CurrentItemId;
+                int removedQuantity = CurrentQuantity;
                 Clear();
-                OnIngredientRemoved?.Invoke(slotIndex, removedId);
+                OnIngredientRemoved?.Invoke(slotIndex, removedId, removedQuantity);
             }
+        }
+
+        private void EnsureRuntimeVisuals()
+        {
+            RectTransform root = transform as RectTransform;
+            if (root == null) return;
+
+            Image background = GetComponent<Image>();
+            if (background == null)
+            {
+                background = gameObject.AddComponent<Image>();
+                background.color = new Color(1f, 1f, 1f, 0.04f);
+            }
+
+            if (slotOutline == null)
+            {
+                slotOutline = GetComponent<Outline>();
+                if (slotOutline == null) slotOutline = gameObject.AddComponent<Outline>();
+                slotOutline.effectColor = new Color(0.28f, 0.18f, 0.08f, 0.75f);
+                slotOutline.effectDistance = new Vector2(1f, -1f);
+            }
+
+            if (iconImage == null)
+            {
+                RectTransform icon = CreateRect("IngredientIcon", root);
+                icon.anchorMin = new Vector2(0.08f, 0.25f);
+                icon.anchorMax = new Vector2(0.92f, 0.92f);
+                icon.offsetMin = icon.offsetMax = Vector2.zero;
+                iconImage = icon.gameObject.AddComponent<Image>();
+                iconImage.preserveAspect = true;
+                iconImage.raycastTarget = false;
+            }
+
+            if (labelText == null)
+            {
+                RectTransform labelRect = CreateRect("IngredientLabel", root);
+                labelRect.anchorMin = new Vector2(0f, 0f);
+                labelRect.anchorMax = new Vector2(1f, 0.30f);
+                labelRect.offsetMin = labelRect.offsetMax = Vector2.zero;
+                labelText = labelRect.gameObject.AddComponent<TextMeshProUGUI>();
+                labelText.fontSize = 12f;
+                labelText.enableAutoSizing = true;
+                labelText.fontSizeMin = 7f;
+                labelText.fontSizeMax = 14f;
+                labelText.color = new Color(0.18f, 0.11f, 0.07f, 1f);
+                labelText.alignment = TextAlignmentOptions.Center;
+                labelText.raycastTarget = false;
+            }
+        }
+
+        private static RectTransform CreateRect(string objectName, RectTransform parent)
+        {
+            var child = new GameObject(objectName, typeof(RectTransform));
+            var rect = (RectTransform)child.transform;
+            rect.SetParent(parent, false);
+            return rect;
         }
     }
 }

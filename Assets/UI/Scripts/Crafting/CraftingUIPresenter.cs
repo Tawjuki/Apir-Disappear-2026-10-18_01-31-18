@@ -110,6 +110,22 @@ namespace ApirApir.UI
             EvaluateRecipe();
         }
 
+        public void ConfigureSpriteBindings(UIItemSpriteBinding[] bindings)
+        {
+            itemSprites = bindings ?? Array.Empty<UIItemSpriteBinding>();
+            BuildSpriteLookup();
+
+            if (cardBuilderInstance != null)
+            {
+                ApirApir.UI.CardBuilder.CardBuilderPresenter builderPresenter =
+                    cardBuilderInstance.GetComponent<ApirApir.UI.CardBuilder.CardBuilderPresenter>();
+                if (builderPresenter != null) builderPresenter.ConfigureSpriteBindings(itemSprites);
+            }
+
+            RefreshMaterialInventory();
+            EvaluateRecipe();
+        }
+
         private void BindEvents()
         {
             if (bound || view == null) return;

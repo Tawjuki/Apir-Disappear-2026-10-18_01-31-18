@@ -111,6 +111,8 @@ namespace ApirApir.UI.Editor
 
             var craftView = craftPanel.AddComponent<UICraftingView>();
             var craftPresenter = craftPanel.AddComponent<CraftingUIPresenter>();
+            craftPresenter.ConfigureSpriteBindings(
+                CardBuilderLobbyInstaller.CreateAvailableAssetSpriteBindings());
 
             // LEFT SIDE: Workshop (Preview + 3 slots + Craft button)
             var craftLeft = CreateUIObject("LeftSide_Workshop", craftPanel.transform);

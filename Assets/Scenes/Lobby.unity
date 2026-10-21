@@ -853,6 +853,32 @@ MonoBehaviour:
   view: {fileID: 0}
   useLocalDefenseDemo: 1
   itemSprites:
+  - itemId: common_dayami
+    sprite: {fileID: 21300000, guid: eefddff5870a30a4e821c187b81da123, type: 3}
+  - itemId: common_tali
+    sprite: {fileID: 21300000, guid: d6a5a96d5dee0b545b93439814ba100b, type: 3}
+  - itemId: common_tela
+    sprite: {fileID: 21300000, guid: 376d5105efea11f42a2c5a1d647f9ae9, type: 3}
+  - itemId: common_goma
+    sprite: {fileID: 21300000, guid: aa6761f9d3c9f694c8df31cffe10ee60, type: 3}
+  - itemId: common_bakal
+    sprite: {fileID: 21300000, guid: 1365842dd77481146a0f7665111e9d86, type: 3}
+  - itemId: common_kandila
+    sprite: {fileID: 21300000, guid: 6b3e3ab3606bdf643b9018cf3af9f236, type: 3}
+  - itemId: rare_salamin
+    sprite: {fileID: 21300000, guid: 0f7b8b9fcb6365349a7bc050c4dbbeb4, type: 3}
+  - itemId: rare_tinta
+    sprite: {fileID: 21300000, guid: 7917fa47c8fa9f748a76ff5fd59e6e21, type: 3}
+  - itemId: rare_tsapa
+    sprite: {fileID: 21300000, guid: 4174a487041ffff46bd66da446a18ff8, type: 3}
+  - itemId: rare_rosaryo
+    sprite: {fileID: 21300000, guid: 34b132b7a2d7ce842aa2dcf346fc8b55, type: 3}
+  - itemId: epic_ngipin_dragon
+    sprite: {fileID: 21300000, guid: 12346d392f5b1e64b93c7b28f54a9a1b, type: 3}
+  - itemId: epic_lawas_dragon
+    sprite: {fileID: 21300000, guid: f356bed513c981c4fbd7e13a1a2eefe8, type: 3}
+  - itemId: epic_kuko_dragon
+    sprite: {fileID: 21300000, guid: 4be217280fd2ab14b82a0f582b42a85a, type: 3}
   - itemId: part_common_magsasaka_head
     sprite: {fileID: 21300000, guid: c079e6f5337fb7f4ab7349f7a5cc3e2e, type: 3}
   - itemId: part_common_magsasaka_body
@@ -865,6 +891,10 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 5ef75b0782d77084e8a20465f9f40a39, type: 3}
   - itemId: part_rare_abogado_legs
     sprite: {fileID: 21300000, guid: 00ca3cb7c6b5d4a4a9a7879aef48435e, type: 3}
+  - itemId: part_epic_bakunawa_head
+    sprite: {fileID: 21300000, guid: a7285f640603e314e8b6402721802ba9, type: 3}
+  - itemId: part_epic_bakunawa_body_legs
+    sprite: {fileID: 21300000, guid: 36a77289323984b4f8f9ba799754dad6, type: 3}
   cardBuilderPanelPrefab: {fileID: 6736634439149236716, guid: a2f3142d44b990742a0b411d4b9d5af1, type: 3}
   openCardBuilderButton: {fileID: 0}
 --- !u!1 &754281201

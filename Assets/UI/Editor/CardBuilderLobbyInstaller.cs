@@ -2,6 +2,7 @@
 using System;
 using System.Linq;
 using ApirApir.UI.CardBuilder;
+using ApirApir.UI.Inventory;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -288,6 +289,7 @@ namespace ApirApir.UI.Editor
                 CreateOptions(CardBuilderPartSlot.Head, "head"),
                 CreateOptions(CardBuilderPartSlot.Body, "body"),
                 CreateOptions(CardBuilderPartSlot.Legs, "legs"));
+            presenter.ConfigureSpriteBindings(CreateAvailableAssetSpriteBindings());
 
             PrefabUtility.SaveAsPrefabAsset(root, PanelPrefabPath);
             UnityEngine.Object.DestroyImmediate(root);
@@ -322,6 +324,40 @@ namespace ApirApir.UI.Editor
             }
 
             return AssetDatabase.LoadAllAssetsAtPath(path).OfType<Sprite>().FirstOrDefault();
+        }
+
+        internal static UIItemSpriteBinding[] CreateAvailableAssetSpriteBindings()
+        {
+            return new[]
+            {
+                Bind("common_dayami", "Assets/Art/Materials/Common/Dayami.png"),
+                Bind("common_tali", "Assets/Art/Materials/Common/Tali.png"),
+                Bind("common_tela", "Assets/Art/Materials/Common/Tela.png"),
+                Bind("common_goma", "Assets/Art/Materials/Common/Goma.png"),
+                Bind("common_bakal", "Assets/Art/Materials/Common/Bakal.png"),
+                Bind("common_kandila", "Assets/Art/Materials/Common/Kandila.png"),
+                Bind("rare_salamin", "Assets/Art/Materials/Rare/Salamin.png"),
+                Bind("rare_tinta", "Assets/Art/Materials/Rare/Tinta.png"),
+                Bind("rare_tsapa", "Assets/Art/Materials/Rare/Tsapa.png"),
+                Bind("rare_rosaryo", "Assets/Art/Materials/Rare/Rosaryo.png"),
+                Bind("epic_ngipin_dragon", "Assets/Art/Materials/Epic/Ngipin ng Dragon.png"),
+                Bind("epic_lawas_dragon", "Assets/Art/Materials/Epic/Lawas ng Dragon.png"),
+                Bind("epic_kuko_dragon", "Assets/Art/Materials/Epic/Kuko ng Dragon.png"),
+                Bind("part_common_magsasaka_head", "Assets/Art/Parts/Head/Common/magsasaka head.png"),
+                Bind("part_common_magsasaka_body", "Assets/Art/Parts/Body/Common/magsasaka body.png"),
+                Bind("part_common_magsasaka_legs", "Assets/Art/Parts/Legs/Common/magsasaka legs.png"),
+                Bind("part_rare_abogado_head", "Assets/Art/Parts/Head/Rare/abogado head.png"),
+                Bind("part_rare_abogado_body", "Assets/Art/Parts/Body/Rare/abogado body.png"),
+                Bind("part_rare_abogado_legs", "Assets/Art/Parts/Legs/Rare/abogado legs.png"),
+                Bind("part_epic_bakunawa_head", "Assets/Art/Parts/Head/Epic/bakunawa head.png"),
+                Bind("part_epic_bakunawa_body_legs",
+                    "Assets/Art/Parts/Hybrid/Body&Legs/Epic/bakunawa body&legs.png")
+            };
+        }
+
+        private static UIItemSpriteBinding Bind(string itemId, string assetPath)
+        {
+            return new UIItemSpriteBinding(itemId, LoadFirstSprite(assetPath));
         }
 
         private static RectTransform CreatePartSection(

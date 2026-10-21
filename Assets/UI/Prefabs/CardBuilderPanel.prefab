@@ -2164,6 +2164,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ApirApir.UI.CardBuilder.CardBuilderPresenter
   view: {fileID: 7237256453241103142}
+  useLocalDefenseDemo: 1
   headOptions:
   - id: abogado_head
     displayName: Abogado
@@ -2191,6 +2192,23 @@ MonoBehaviour:
     displayName: Pari
     slot: 2
     sprite: {fileID: 21300000, guid: 3f04935dbe1421b418d919612065028b, type: 3}
+  partSprites:
+  - itemId: part_common_magsasaka_head
+    sprite: {fileID: 21300000, guid: c079e6f5337fb7f4ab7349f7a5cc3e2e, type: 3}
+  - itemId: part_common_magsasaka_body
+    sprite: {fileID: 21300000, guid: bb2c81c797db7f34eb946b28126a9d17, type: 3}
+  - itemId: part_common_magsasaka_legs
+    sprite: {fileID: 21300000, guid: 01fc04318dd5db34bbc302adbcc783e0, type: 3}
+  - itemId: part_rare_abogado_head
+    sprite: {fileID: 21300000, guid: 3a92461d403beba4dbe667df3b9ce705, type: 3}
+  - itemId: part_rare_abogado_body
+    sprite: {fileID: 21300000, guid: 5ef75b0782d77084e8a20465f9f40a39, type: 3}
+  - itemId: part_rare_abogado_legs
+    sprite: {fileID: 21300000, guid: 00ca3cb7c6b5d4a4a9a7879aef48435e, type: 3}
+  - itemId: part_epic_bakunawa_head
+    sprite: {fileID: 21300000, guid: a7285f640603e314e8b6402721802ba9, type: 3}
+  - itemId: part_epic_bakunawa_body_legs
+    sprite: {fileID: 21300000, guid: 36a77289323984b4f8f9ba799754dad6, type: 3}
 --- !u!1 &7108198030573856967
 GameObject:
   m_ObjectHideFlags: 0

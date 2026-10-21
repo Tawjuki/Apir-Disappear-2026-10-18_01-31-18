@@ -9,6 +9,12 @@ namespace ApirApir.UI.Inventory
         [SerializeField] private string itemId = string.Empty;
         [SerializeField] private Sprite sprite;
 
+        public UIItemSpriteBinding(string itemId, Sprite sprite)
+        {
+            this.itemId = itemId == null ? string.Empty : itemId.Trim();
+            this.sprite = sprite;
+        }
+
         public string ItemId => itemId;
         public Sprite Sprite => sprite;
     }

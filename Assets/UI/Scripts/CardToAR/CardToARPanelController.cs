@@ -236,6 +236,11 @@ namespace ApirApir.UI.CardToAR
 
         private void OpenAR()
         {
+            if (string.Equals(SceneManager.GetActiveScene().name, "CardAR", StringComparison.Ordinal))
+            {
+                gameObject.SetActive(false);
+                return;
+            }
             if (Application.CanStreamedLevelBeLoaded("CardAR")) SceneManager.LoadScene("CardAR");
             else statusText.text = "CardAR is not available in Build Settings yet.";
         }

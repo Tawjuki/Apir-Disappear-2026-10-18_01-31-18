@@ -70,3 +70,8 @@ module.exports = async ({ params, context, logger }) => {
     logger.info('Saved shared APIR APIR card.', { cardId, ownerPlayerId: context.playerId });
     return { saved: true, duplicate: false, cardId };
 };
+
+module.exports.params = {
+    cardId: { type: 'String', required: true },
+    recordJson: { type: 'String', required: true }
+};

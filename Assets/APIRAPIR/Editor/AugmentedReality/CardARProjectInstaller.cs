@@ -84,8 +84,8 @@ namespace ApirApir.EditorTools
 
         private static void ConfigureAndroid()
         {
-            if ((int)PlayerSettings.Android.minSdkVersion < (int)AndroidSdkVersions.AndroidApiLevel24)
-                PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel24;
+            if ((int)PlayerSettings.Android.minSdkVersion < (int)AndroidSdkVersions.AndroidApiLevel25)
+                PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel25;
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
 
@@ -117,6 +117,8 @@ namespace ApirApir.EditorTools
 
             if (!XRPackageMetadataStore.AssignLoader(settings.Manager, typeof(ARCoreLoader).FullName, group))
                 Debug.LogWarning("ARCore loader assignment was not changed; verify it under XR Plug-in Management > Android.");
+            settings.Manager.automaticLoading = true;
+            settings.Manager.automaticRunning = true;
             EditorUtility.SetDirty(settings);
             EditorUtility.SetDirty(settings.Manager);
         }
@@ -177,6 +179,8 @@ namespace ApirApir.EditorTools
                 new Vector2(0.08f, 0.88f), new Vector2(0.92f, 0.97f));
             Button back = CreateButton("BackButton", canvas.transform, "BACK TO LOBBY",
                 new Vector2(0.03f, 0.03f), new Vector2(0.25f, 0.11f));
+            Button authorCard = CreateButton("AuthorCardButton", canvas.transform, "CREATE / VIEW CARD",
+                new Vector2(0.27f, 0.03f), new Vector2(0.51f, 0.11f));
 
             GameObject displayRoot = new GameObject("RecognizedCardDisplay", typeof(RectTransform));
             displayRoot.transform.SetParent(canvas.transform, false);
@@ -229,7 +233,7 @@ namespace ApirApir.EditorTools
                 TextAlignmentOptions.TopLeft, new Vector2(0.52f, 0.22f), new Vector2(0.94f, 0.42f));
             ARCardDisplayView display = runtime.AddComponent<ARCardDisplayView>();
             display.Configure(displayRoot, preview, name, uniqueId, skills, stats, classification, qrImage);
-            controller.Configure(sessionAdapter, scanner, display, resolver, status, back);
+            controller.Configure(sessionAdapter, scanner, display, resolver, status, back, authorCard);
             display.Hide();
 
             EditorSceneManager.MarkSceneDirty(scene);

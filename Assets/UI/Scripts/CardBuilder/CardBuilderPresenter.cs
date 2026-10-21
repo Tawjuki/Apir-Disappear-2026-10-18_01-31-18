@@ -4,10 +4,7 @@ using ApirApir.Battle;
 using ApirApir.Cards;
 using ApirApir.Crafting;
 using ApirApir.UI.Inventory;
-using ApirApir.UI.CardToAR;
 using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
 
 namespace ApirApir.UI.CardBuilder
 {
@@ -34,11 +31,8 @@ namespace ApirApir.UI.CardBuilder
         private CardBuildSnapshot snapshot;
         private bool initialized;
         private bool bound;
-        private Button openCardToARButton;
-        private CardToARPanelController cardToARPanel;
 
         public CardBuilderSelectionState Selection => selection;
-        public CardBuildSnapshot CurrentSnapshot => snapshot;
 
         private void Awake()
         {
@@ -67,7 +61,6 @@ namespace ApirApir.UI.CardBuilder
             {
                 Initialize();
             }
-            EnsureCardToARNavigation();
         }
 
         private void OnDisable()
@@ -346,54 +339,6 @@ namespace ApirApir.UI.CardBuilder
 
         private Sprite ResolveSprite(string definitionId) => definitionId != null &&
             spriteByDefinition.TryGetValue(definitionId, out Sprite sprite) ? sprite : null;
-
-        private void EnsureCardToARNavigation()
-        {
-            Canvas canvas = GetComponentInParent<Canvas>();
-            if (canvas == null) return;
-            Transform existing = transform.Find("OpenCardToARButton");
-            if (existing != null) openCardToARButton = existing.GetComponent<Button>();
-            if (openCardToARButton == null)
-            {
-                var root = new GameObject("OpenCardToARButton", typeof(RectTransform), typeof(Image), typeof(Button));
-                root.transform.SetParent(transform, false);
-                var rect = (RectTransform)root.transform;
-                rect.anchorMin = new Vector2(0.55f, 0.91f);
-                rect.anchorMax = new Vector2(0.75f, 0.98f);
-                rect.offsetMin = rect.offsetMax = Vector2.zero;
-                root.GetComponent<Image>().color = new Color(0.16f, 0.45f, 0.55f, 0.96f);
-                var label = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
-                label.transform.SetParent(root.transform, false);
-                var labelRect = (RectTransform)label.transform;
-                labelRect.anchorMin = Vector2.zero;
-                labelRect.anchorMax = Vector2.one;
-                labelRect.offsetMin = labelRect.offsetMax = Vector2.zero;
-                TextMeshProUGUI text = label.GetComponent<TextMeshProUGUI>();
-                text.text = "CARD TO AR";
-                text.fontSize = 18f;
-                text.alignment = TextAlignmentOptions.Center;
-                text.color = Color.white;
-                openCardToARButton = root.GetComponent<Button>();
-            }
-
-            openCardToARButton.onClick.RemoveListener(OpenCardToAR);
-            openCardToARButton.onClick.AddListener(OpenCardToAR);
-            if (cardToARPanel == null)
-            {
-                CardToARPanelController[] panels = canvas.GetComponentsInChildren<CardToARPanelController>(true);
-                cardToARPanel = panels.Length > 0 ? panels[0] : CardToARPanelController.Create(canvas.transform);
-            }
-        }
-
-        private void OpenCardToAR()
-        {
-            if (snapshot == null || cardToARPanel == null)
-            {
-                Debug.LogWarning("[Card to AR] Confirm at least one assembled card snapshot first.");
-                return;
-            }
-            cardToARPanel.Show(snapshot, ResolveSprite);
-        }
 
         private static CardBuilderPartSlot ToBuilderSlot(PartSlot slot) => slot switch
         {

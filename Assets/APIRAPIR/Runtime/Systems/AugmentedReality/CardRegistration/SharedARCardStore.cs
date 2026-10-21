@@ -61,9 +61,9 @@ namespace ApirApir.AugmentedReality
         [Serializable]
         private sealed class SaveResponse
         {
-            public bool saved;
-            public bool duplicate;
-            public string cardId;
+            public bool saved = false;
+            public bool duplicate = false;
+            public string cardId = string.Empty;
         }
 
         public async Task<SharedARCardStoreResult> SaveAsync(

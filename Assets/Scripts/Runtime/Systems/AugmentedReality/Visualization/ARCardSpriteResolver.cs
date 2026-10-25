@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ApirApir.Battle;
 using UnityEngine;
 
 namespace ApirApir.AugmentedReality
@@ -30,7 +31,8 @@ namespace ApirApir.AugmentedReality
                 }
             }
 
-            return visualAssetId != null && lookup.TryGetValue(visualAssetId, out Sprite sprite)
+            string canonicalId = DefaultPartDefinitionCatalog.NormalizeId(visualAssetId);
+            return canonicalId.Length > 0 && lookup.TryGetValue(canonicalId, out Sprite sprite)
                 ? sprite
                 : null;
         }

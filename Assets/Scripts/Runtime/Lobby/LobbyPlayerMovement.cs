@@ -31,6 +31,8 @@ public sealed class LobbyPlayerMovement : MonoBehaviour
     private static readonly int SpeedHash =
         Animator.StringToHash("Speed");
 
+    public UniversalPlayerInput Controls => controls;
+
     private void Awake()
     {
         controller = GetComponent<CharacterController>();
@@ -61,6 +63,11 @@ public sealed class LobbyPlayerMovement : MonoBehaviour
         }
 
         MinigameInputFrame inputFrame = controls.ReadInput();
+        if (!movementEnabled)
+        {
+            return;
+        }
+
         Vector2 input = inputFrame.Movement;
         bool keyboardIsActive = controls.LastMovementSource == PlayerInputSource.Keyboard;
         bool keyboardRunning = keyboardIsActive && inputFrame.IsHeld(MinigameActionSlot.Modifier);

@@ -1695,6 +1695,12 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 5ef75b0782d77084e8a20465f9f40a39, type: 3}
   - visualAssetId: part_rare_abogado_legs
     sprite: {fileID: 21300000, guid: 00ca3cb7c6b5d4a4a9a7879aef48435e, type: 3}
+    - visualAssetId: part_rare_pari_head
+      sprite: {fileID: 21300000, guid: 76bd3fb8728f5154eb81937888e5e954, type: 3}
+    - visualAssetId: part_rare_pari_body
+      sprite: {fileID: 21300000, guid: ab51323fe208486459812df357eca620, type: 3}
+    - visualAssetId: part_rare_pari_legs
+      sprite: {fileID: 21300000, guid: 3f04935dbe1421b418d919612065028b, type: 3}
   - visualAssetId: part_epic_bakunawa_head
     sprite: {fileID: 21300000, guid: a7285f640603e314e8b6402721802ba9, type: 3}
   - visualAssetId: part_epic_bakunawa_body_legs

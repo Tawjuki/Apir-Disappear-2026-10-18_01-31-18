@@ -30,8 +30,7 @@ namespace ApirApir.Crafting
         /// <summary>
         /// Focused preparation catalog for the character artwork currently present in the
         /// project. It keeps the established 33-part catalog intact while applying the
-        /// defense-day recipes from the current implementation brief. Pari is intentionally
-        /// not registered until an authoritative rarity/stat definition is supplied.
+        /// defense-day recipes from the current implementation brief.
         /// </summary>
         public static CraftingCatalog CreateAvailableAssetCatalog(
             ICraftingContentResolver resolver = null)
@@ -59,6 +58,10 @@ namespace ApirApir.Crafting
                 Req("rare_salamin", 2, "common_tela", 1),
                 Req("rare_tinta", 2, "rare_salamin", 1, "common_tela", 2),
                 Req("rare_tinta", 2, "common_goma", 1));
+            AddCharacter(catalog, resolver, "rare_pari", "Pari", PartRarity.Rare,
+                Req("rare_rosaryo", 1, "common_tela", 2),
+                Req("rare_rosaryo", 1, "common_kandila", 2, "common_tela", 2),
+                Req("rare_rosaryo", 1, "common_goma", 2));
 
             AddPart(catalog, resolver, "epic_bakunawa", "Bakunawa", PartSlot.Head,
                 PartRarity.Epic,
@@ -124,7 +127,7 @@ namespace ApirApir.Crafting
                 Req("rare_tinta", 2, "rare_salamin", 1, "common_tela", 2),
                 Req("rare_tinta", 2, "common_goma", 1));
 
-            AddCharacter(catalog, resolver, "rare_pulis", "Pulis", PartRarity.Rare,
+            AddCharacter(catalog, resolver, "rare_pari", "Pari", PartRarity.Rare,
                 Req("rare_tsapa", 2, "common_bakal", 1),
                 Req("rare_tsapa", 2, "rare_tinta", 1, "common_tela", 2),
                 Req("rare_tsapa", 1, "rare_tinta", 1, "common_goma", 1));

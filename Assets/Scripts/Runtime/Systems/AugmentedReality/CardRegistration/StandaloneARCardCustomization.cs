@@ -52,7 +52,7 @@ namespace ApirApir.AugmentedReality
             new StandaloneARCardCatalog(DefaultCraftingCatalog.CreateAvailableAssetCatalog());
 
         public bool TryGetPart(string definitionId, out CraftablePartDefinition part) =>
-            parts.Parts.TryGetValue(definitionId ?? string.Empty, out part);
+            parts.TryGetPart(definitionId, out part);
 
         public bool TryCompose(
             string draftId,

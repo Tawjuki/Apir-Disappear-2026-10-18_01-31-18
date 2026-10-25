@@ -33,6 +33,17 @@ namespace ApirApir.Battle.Tests
             }
         }
 
+        [Test]
+        public void LegacyRarePulisPassiveIds_ResolveToRenamedPariPassives()
+        {
+            PartPassiveCatalog catalog = DefaultPartDefinitionCatalog.Passives;
+
+            Assert.That(catalog.GetRequired("passive_insulated").Id,
+                Is.EqualTo(PartPassiveIds.BanalNaPanalangin));
+            Assert.That(catalog.GetRequired("passive_protektadong_katawan").Id,
+                Is.EqualTo(PartPassiveIds.BanalNaPanangga));
+        }
+
         [TestCase("part_common_magsasaka_head", PartSlot.Head, PartRarity.Common, 15, 12, 0, 0)]
         [TestCase("part_common_magsasaka_body", PartSlot.Body, PartRarity.Common, 25, 13, 0, 0)]
         [TestCase("part_common_magsasaka_legs", PartSlot.Legs, PartRarity.Common, 12, 10, 5, 0)]
@@ -48,9 +59,9 @@ namespace ApirApir.Battle.Tests
         [TestCase("part_rare_abogado_head", PartSlot.Head, PartRarity.Rare, 30, 25, 0, 15)]
         [TestCase("part_rare_abogado_body", PartSlot.Body, PartRarity.Rare, 42, 23, 0, 0)]
         [TestCase("part_rare_abogado_legs", PartSlot.Legs, PartRarity.Rare, 26, 19, 5, 0)]
-        [TestCase("part_rare_pulis_head", PartSlot.Head, PartRarity.Rare, 35, 29, 0, 10)]
-        [TestCase("part_rare_pulis_body", PartSlot.Body, PartRarity.Rare, 45, 26, 0, 0)]
-        [TestCase("part_rare_pulis_legs", PartSlot.Legs, PartRarity.Rare, 28, 22, 10, 0)]
+        [TestCase("part_rare_pari_head", PartSlot.Head, PartRarity.Rare, 35, 29, 0, 10)]
+        [TestCase("part_rare_pari_body", PartSlot.Body, PartRarity.Rare, 45, 26, 0, 0)]
+        [TestCase("part_rare_pari_legs", PartSlot.Legs, PartRarity.Rare, 28, 22, 10, 0)]
         [TestCase("part_rare_manggagayuma_head", PartSlot.Head, PartRarity.Rare, 28, 25, 0, 10)]
         [TestCase("part_rare_manggagayuma_body", PartSlot.Body, PartRarity.Rare, 38, 22, 0, 0)]
         [TestCase("part_rare_manggagayuma_legs", PartSlot.Legs, PartRarity.Rare, 27, 19, 10, 0)]
@@ -86,7 +97,7 @@ namespace ApirApir.Battle.Tests
         [TestCase("common_pulis", 157, 39)]
         [TestCase("common_mangingisda", 154, 36)]
         [TestCase("rare_abogado", 198, 67)]
-        [TestCase("rare_pulis", 208, 77)]
+        [TestCase("rare_pari", 208, 77)]
         [TestCase("rare_manggagayuma", 193, 66)]
         [TestCase("rare_mangkukulam", 201, 73)]
         [TestCase("epic_bakunawa", 285, 124)]
@@ -137,8 +148,8 @@ namespace ApirApir.Battle.Tests
         }
 
         [TestCase("part_rare_abogado_head", StatusEffectIds.Paghihilo)]
-        [TestCase("part_rare_pulis_head", StatusEffectIds.Kuryente)]
-        [TestCase("part_rare_pulis_body", StatusEffectIds.Sugat)]
+        [TestCase("part_rare_pari_head", StatusEffectIds.Kuryente)]
+        [TestCase("part_rare_pari_body", StatusEffectIds.Sugat)]
         [TestCase("part_rare_manggagayuma_body", StatusEffectIds.Madumi)]
         [TestCase("part_rare_mangkukulam_body", StatusEffectIds.Lamig)]
         [TestCase("part_epic_bakunawa_body", StatusEffectIds.Sunog)]
@@ -165,7 +176,7 @@ namespace ApirApir.Battle.Tests
         public void BrokenPart_StopsGrantingImmunity()
         {
             SkillDefinition skill = DamageWithStatus("attack", 10, StatusEffectIds.Kuryente);
-            PartDefinition definition = DefaultPartDefinitionCatalog.GetRequired("part_rare_pulis_head");
+            PartDefinition definition = DefaultPartDefinitionCatalog.GetRequired("part_rare_pari_head");
             BattleController battle = CreateBattle(
                 Loadout("p1", null, skill),
                 Loadout("p2", new[] { new EquippedPart(definition, 0) }, skill));

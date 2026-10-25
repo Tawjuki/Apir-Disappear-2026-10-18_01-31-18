@@ -24,7 +24,7 @@ namespace ApirApir.Lobby
         {
             global::LobbyPlayerMovement player =
                 other == null ? null : other.GetComponentInParent<global::LobbyPlayerMovement>();
-            coordinator?.TryOpen(this, player);
+            coordinator?.NotifyEntered(this, player);
         }
 
         private void OnTriggerExit(Collider other)

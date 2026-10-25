@@ -82,8 +82,11 @@ namespace ApirApir.Battle
     {
         public const string MatibayNaIsip = "passive_matibay_na_isip";
         public const string HulingDepensa = "passive_huling_depensa";
-        public const string Insulated = "passive_insulated";
-        public const string ProtektadongKatawan = "passive_protektadong_katawan";
+        public const string BanalNaPanalangin = "passive_banal_na_panalangin";
+        public const string BanalNaPanangga = "passive_banal_na_panangga";
+        // Source-compatible aliases for integrations compiled against the earlier names.
+        public const string Insulated = BanalNaPanalangin;
+        public const string ProtektadongKatawan = BanalNaPanangga;
         public const string MahikangPaggaling = "passive_mahikang_paggaling";
         public const string MalinisNaGayuma = "passive_malinis_na_gayuma";
         public const string SumpangDagdag = "passive_sumpang_dagdag";
@@ -124,7 +127,17 @@ namespace ApirApir.Battle
         public IReadOnlyDictionary<string, PartPassiveDefinition> Definitions => readOnlyDefinitions;
 
         public bool TryGet(string id, out PartPassiveDefinition definition) =>
-            definitions.TryGetValue(id ?? string.Empty, out definition);
+            definitions.TryGetValue(NormalizeId(id), out definition);
+
+        private static string NormalizeId(string id)
+        {
+            switch (id ?? string.Empty)
+            {
+                case "passive_insulated": return PartPassiveIds.BanalNaPanalangin;
+                case "passive_protektadong_katawan": return PartPassiveIds.BanalNaPanangga;
+                default: return id ?? string.Empty;
+            }
+        }
 
         public PartPassiveDefinition GetRequired(string id)
         {
@@ -143,9 +156,9 @@ namespace ApirApir.Battle
             new PartPassiveDefinition(PartPassiveIds.HulingDepensa,
                 PartPassiveKind.ApplyStatusAtHitPointThreshold, StatusEffectIds.Laban,
                 hitPointThresholdPercent: 30f, oncePerDuel: true),
-            new PartPassiveDefinition(PartPassiveIds.Insulated, PartPassiveKind.StatusImmunity,
+            new PartPassiveDefinition(PartPassiveIds.BanalNaPanalangin, PartPassiveKind.StatusImmunity,
                 StatusEffectIds.Kuryente),
-            new PartPassiveDefinition(PartPassiveIds.ProtektadongKatawan, PartPassiveKind.StatusImmunity,
+            new PartPassiveDefinition(PartPassiveIds.BanalNaPanangga, PartPassiveKind.StatusImmunity,
                 StatusEffectIds.Sugat),
             new PartPassiveDefinition(PartPassiveIds.MahikangPaggaling,
                 PartPassiveKind.HealAfterNegativeStatusApplied, amount: 5, oncePerExchange: true),

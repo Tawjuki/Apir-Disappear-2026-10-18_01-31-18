@@ -15,7 +15,22 @@ namespace ApirApir.Battle
         public static PartPassiveCatalog Passives => PassiveCatalog;
 
         public static bool TryGet(string partId, out PartDefinition definition) =>
-            Parts.TryGetValue(partId ?? string.Empty, out definition);
+            Parts.TryGetValue(NormalizeId(partId), out definition);
+
+        /// <summary>
+        /// Maps identifiers written before Rare Pulis was corrected to Pari. Keeping this
+        /// read path allows existing card records to resolve without registering duplicate parts.
+        /// </summary>
+        public static string NormalizeId(string partId)
+        {
+            switch (partId ?? string.Empty)
+            {
+                case "part_rare_pulis_head": return "part_rare_pari_head";
+                case "part_rare_pulis_body": return "part_rare_pari_body";
+                case "part_rare_pulis_legs": return "part_rare_pari_legs";
+                default: return partId ?? string.Empty;
+            }
+        }
 
         public static PartDefinition GetRequired(string partId)
         {
@@ -49,11 +64,11 @@ namespace ApirApir.Battle
             Add(result, "part_rare_abogado_body", PartSlot.Body, PartRarity.Rare, 42, 23,
                 passiveIds: new[] { PartPassiveIds.HulingDepensa });
             Add(result, "part_rare_abogado_legs", PartSlot.Legs, PartRarity.Rare, 26, 19, 5);
-            Add(result, "part_rare_pulis_head", PartSlot.Head, PartRarity.Rare, 35, 29, crit: 10,
-                passiveIds: new[] { PartPassiveIds.Insulated });
-            Add(result, "part_rare_pulis_body", PartSlot.Body, PartRarity.Rare, 45, 26,
-                passiveIds: new[] { PartPassiveIds.ProtektadongKatawan });
-            Add(result, "part_rare_pulis_legs", PartSlot.Legs, PartRarity.Rare, 28, 22, 10);
+            Add(result, "part_rare_pari_head", PartSlot.Head, PartRarity.Rare, 35, 29, crit: 10,
+                passiveIds: new[] { PartPassiveIds.BanalNaPanalangin });
+            Add(result, "part_rare_pari_body", PartSlot.Body, PartRarity.Rare, 45, 26,
+                passiveIds: new[] { PartPassiveIds.BanalNaPanangga });
+            Add(result, "part_rare_pari_legs", PartSlot.Legs, PartRarity.Rare, 28, 22, 10);
             Add(result, "part_rare_manggagayuma_head", PartSlot.Head, PartRarity.Rare, 28, 25, crit: 10,
                 passiveIds: new[] { PartPassiveIds.MahikangPaggaling });
             Add(result, "part_rare_manggagayuma_body", PartSlot.Body, PartRarity.Rare, 38, 22,

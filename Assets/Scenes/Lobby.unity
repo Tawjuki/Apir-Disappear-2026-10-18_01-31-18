@@ -655,8 +655,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 7, y: -55}
-  m_SizeDelta: {x: 100, y: 100}
+  m_AnchoredPosition: {x: 38, y: -27}
+  m_SizeDelta: {x: 90, y: 90}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &394395091
 MonoBehaviour:
@@ -671,7 +671,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.93962264, g: 0.9248319, b: 0, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1378,6 +1378,12 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 5ef75b0782d77084e8a20465f9f40a39, type: 3}
   - itemId: part_rare_abogado_legs
     sprite: {fileID: 21300000, guid: 00ca3cb7c6b5d4a4a9a7879aef48435e, type: 3}
+  - itemId: part_rare_pari_head
+    sprite: {fileID: 21300000, guid: 76bd3fb8728f5154eb81937888e5e954, type: 3}
+  - itemId: part_rare_pari_body
+    sprite: {fileID: 21300000, guid: ab51323fe208486459812df357eca620, type: 3}
+  - itemId: part_rare_pari_legs
+    sprite: {fileID: 21300000, guid: 3f04935dbe1421b418d919612065028b, type: 3}
   - itemId: part_epic_bakunawa_head
     sprite: {fileID: 21300000, guid: a7285f640603e314e8b6402721802ba9, type: 3}
   - itemId: part_epic_bakunawa_body_legs
@@ -1977,11 +1983,12 @@ RectTransform:
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 1110343852}
-  m_Father: {fileID: 2021242910}
+  - {fileID: 1533792341}
+  m_Father: {fileID: 2147031124}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -747, y: -315}
+  m_AnchoredPosition: {x: -756, y: -344}
   m_SizeDelta: {x: 180, y: 180}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1201803558
@@ -2637,15 +2644,15 @@ RectTransform:
   m_GameObject: {fileID: 1533792340}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.6666667, y: 0.6666667, z: 0.6666667}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1926003619}
-  m_Father: {fileID: 2021242910}
+  m_Father: {fileID: 1201803557}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 740, y: -338}
+  m_AnchoredPosition: {x: 991.3334, y: -15.333313}
   m_SizeDelta: {x: 200, y: 200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1533792342
@@ -4004,8 +4011,6 @@ RectTransform:
   m_Children:
   - {fileID: 673909381}
   - {fileID: 2147031124}
-  - {fileID: 1201803557}
-  - {fileID: 1533792341}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -4100,7 +4105,8 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1201803557}
   m_Father: {fileID: 2021242910}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}

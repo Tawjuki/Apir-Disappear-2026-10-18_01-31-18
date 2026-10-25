@@ -44,6 +44,15 @@ namespace ApirApir.UI.CardBuilder
         {
             Bind();
             SubscribeRuntime();
+
+            // Inventory changes can occur while this panel is inactive (for example, when
+            // the player returns to Crafting and creates another part). Rebuild the view
+            // whenever an already-initialized Card Builder is reopened so those parts are
+            // not omitted simply because the presenter was unsubscribed at craft time.
+            if (initialized && inventory != null && assembly != null)
+            {
+                RefreshRuntimeState();
+            }
         }
 
         private void Start()
@@ -280,12 +289,13 @@ namespace ApirApir.UI.CardBuilder
             for (int i = 0; i < parts.Count; i++)
             {
                 OwnedCardPart part = parts[i];
+                if (part?.Definition == null) continue;
                 var option = new CardBuilderPartOptionDefinition(
                     part.InstanceId,
                     part.Definition.Id,
                     part.Definition.DisplayName,
                     ToBuilderSlot(part.Definition.Slot),
-                    ResolveSprite(part.Definition.Id));
+                    ResolvePartSprite(part.Definition));
                 switch (part.Definition.Slot)
                 {
                     case PartSlot.Head: heads.Add(option); break;
@@ -294,6 +304,17 @@ namespace ApirApir.UI.CardBuilder
                 }
             }
             view.PopulateOptions(heads, bodies, legs);
+        }
+
+        private void RefreshRuntimeState()
+        {
+            if (assembly.TryGetCardBuild(playerId, cardId, out CardBuildSnapshot latest))
+            {
+                snapshot = latest;
+            }
+
+            RefreshOwnedParts();
+            DisplaySnapshot();
         }
 
         private void DisplaySnapshot()
@@ -337,8 +358,20 @@ namespace ApirApir.UI.CardBuilder
             }
         }
 
-        private Sprite ResolveSprite(string definitionId) => definitionId != null &&
-            spriteByDefinition.TryGetValue(definitionId, out Sprite sprite) ? sprite : null;
+        private Sprite ResolveSprite(string definitionId)
+        {
+            string canonicalId = DefaultPartDefinitionCatalog.NormalizeId(definitionId);
+            return canonicalId.Length > 0 && spriteByDefinition.TryGetValue(canonicalId, out Sprite sprite)
+                ? sprite
+                : null;
+        }
+
+        private Sprite ResolvePartSprite(CraftablePartDefinition definition)
+        {
+            if (definition == null) return null;
+            Sprite sprite = ResolveSprite(definition.VisualAssetId);
+            return sprite != null ? sprite : ResolveSprite(definition.Id);
+        }
 
         private static CardBuilderPartSlot ToBuilderSlot(PartSlot slot) => slot switch
         {

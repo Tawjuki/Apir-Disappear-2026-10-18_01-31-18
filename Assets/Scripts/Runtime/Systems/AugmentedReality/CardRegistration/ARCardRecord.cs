@@ -275,7 +275,7 @@ namespace ApirApir.AugmentedReality
         {
             if (slot == null || slot.IsEmpty) return null;
             string rarity = string.Empty;
-            if (craftingCatalog.Parts.TryGetValue(slot.DefinitionId, out CraftablePartDefinition definition))
+            if (craftingCatalog.TryGetPart(slot.DefinitionId, out CraftablePartDefinition definition))
                 rarity = definition.Rarity.ToString();
             return new ARCardPartRecord
             {

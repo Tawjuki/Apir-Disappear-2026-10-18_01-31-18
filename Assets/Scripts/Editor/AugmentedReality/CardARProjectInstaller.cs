@@ -38,6 +38,9 @@ namespace ApirApir.EditorTools
             ("part_rare_abogado_head", "3a92461d403beba4dbe667df3b9ce705"),
             ("part_rare_abogado_body", "5ef75b0782d77084e8a20465f9f40a39"),
             ("part_rare_abogado_legs", "00ca3cb7c6b5d4a4a9a7879aef48435e"),
+            ("part_rare_pari_head", "76bd3fb8728f5154eb81937888e5e954"),
+            ("part_rare_pari_body", "ab51323fe208486459812df357eca620"),
+            ("part_rare_pari_legs", "3f04935dbe1421b418d919612065028b"),
             ("part_epic_bakunawa_head", "a7285f640603e314e8b6402721802ba9"),
             ("part_epic_bakunawa_body_legs", "36a77289323984b4f8f9ba799754dad6")
         };

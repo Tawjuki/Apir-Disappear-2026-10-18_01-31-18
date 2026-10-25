@@ -11,6 +11,9 @@ namespace ApirApir.Minigames
     [DisallowMultipleComponent]
     public sealed class MinigameContextActionView : MonoBehaviour
     {
+        private static readonly MinigameContextActionView[] ActiveViews =
+            new MinigameContextActionView[4];
+
         [SerializeField] private MinigameActionButton actionInput;
         [SerializeField] private TMP_Text label;
         [SerializeField] private Graphic buttonGraphic;
@@ -22,17 +25,28 @@ namespace ApirApir.Minigames
 
         public MinigameActionButton ActionInput => actionInput;
 
+        public static MinigameContextActionView GetActive(MinigameActionSlot slot)
+        {
+            int index = (int)slot;
+            return index >= 0 && index < ActiveViews.Length ? ActiveViews[index] : null;
+        }
+
         private void Awake()
         {
-            if (actionInput == null)
-            {
-                actionInput = GetComponent<MinigameActionButton>();
-            }
+            ResolveReferences();
+        }
 
-            if (buttonGraphic == null)
-            {
-                buttonGraphic = GetComponent<Graphic>();
-            }
+        private void OnEnable()
+        {
+            ResolveReferences();
+            int index = GetSlotIndex();
+            if (index >= 0) ActiveViews[index] = this;
+        }
+
+        private void OnDisable()
+        {
+            int index = GetSlotIndex();
+            if (index >= 0 && ActiveViews[index] == this) ActiveViews[index] = null;
         }
 
         public void SetContext(string actionLabel, bool available)
@@ -70,6 +84,20 @@ namespace ApirApir.Minigames
                 canvasGroup.blocksRaycasts = available;
                 canvasGroup.alpha = available ? 1f : 0.45f;
             }
+        }
+
+        private void ResolveReferences()
+        {
+            if (actionInput == null) actionInput = GetComponent<MinigameActionButton>();
+            if (label == null) label = GetComponentInChildren<TMP_Text>(true);
+            if (buttonGraphic == null) buttonGraphic = GetComponent<Graphic>();
+            if (canvasGroup == null) canvasGroup = GetComponent<CanvasGroup>();
+        }
+
+        private int GetSlotIndex()
+        {
+            int index = actionInput == null ? -1 : (int)actionInput.ActionSlot;
+            return index >= 0 && index < ActiveViews.Length ? index : -1;
         }
     }
 }

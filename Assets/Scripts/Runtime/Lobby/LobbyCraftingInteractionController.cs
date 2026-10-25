@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using ApirApir.Minigames;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -20,7 +22,14 @@ namespace ApirApir.Lobby
         [SerializeField] private GameObject[] craftingTables = Array.Empty<GameObject>();
         [SerializeField] private TMP_FontAsset inventoryFont;
 
+        [Header("Action Context")]
+        [SerializeField] private string craftingActionLabel = "CRAFT";
+        [SerializeField] private string defaultActionLabel = "ACTION";
+
+        private readonly HashSet<LobbyCraftingTableTrigger> nearbyTriggers =
+            new HashSet<LobbyCraftingTableTrigger>();
         private LobbyCraftingTableTrigger activeTrigger;
+        private UniversalPlayerInput playerControls;
         private bool craftingOpen;
 
         private void Awake()
@@ -35,38 +44,52 @@ namespace ApirApir.Lobby
             SetCraftingState(false);
         }
 
+        private void Start()
+        {
+            BindPlayerControls();
+            RefreshActionContext();
+        }
+
         private void OnDestroy()
         {
+            if (playerControls != null)
+            {
+                playerControls.ActionPressed -= HandleActionPressed;
+                playerControls.SetActionContext(
+                    MinigameActionSlot.Primary, defaultActionLabel, false);
+            }
+
             if (exitButton != null)
             {
                 exitButton.onClick.RemoveListener(CloseCrafting);
             }
         }
 
-        internal void TryOpen(
+        internal void NotifyEntered(
             LobbyCraftingTableTrigger source,
             global::LobbyPlayerMovement enteringPlayer)
         {
-            if (craftingOpen || source == null || enteringPlayer == null ||
-                enteringPlayer != localPlayerMovement || source.IsBlocked(enteringPlayer))
+            if (source == null || enteringPlayer == null || enteringPlayer != localPlayerMovement)
             {
                 return;
             }
 
-            activeTrigger = source;
-            SetCraftingState(true);
-            ConfigureLobbyInventory();
+            nearbyTriggers.Add(source);
+            RefreshActionContext();
         }
 
         internal void NotifyExited(
             LobbyCraftingTableTrigger source,
             global::LobbyPlayerMovement exitingPlayer)
         {
-            if (source != null && source == activeTrigger && exitingPlayer == localPlayerMovement &&
-                !craftingOpen)
+            if (source == null || exitingPlayer != localPlayerMovement)
             {
-                activeTrigger = null;
+                return;
             }
+
+            nearbyTriggers.Remove(source);
+            if (!craftingOpen && source == activeTrigger) activeTrigger = null;
+            RefreshActionContext();
         }
 
         public void CloseCrafting()
@@ -83,6 +106,51 @@ namespace ApirApir.Lobby
             }
 
             SetCraftingState(false);
+            RefreshActionContext();
+        }
+
+        private void BindPlayerControls()
+        {
+            playerControls = localPlayerMovement == null ? null : localPlayerMovement.Controls;
+            if (playerControls == null) return;
+            playerControls.ActionPressed -= HandleActionPressed;
+            playerControls.ActionPressed += HandleActionPressed;
+        }
+
+        private void HandleActionPressed(MinigameActionSlot slot)
+        {
+            if (slot != MinigameActionSlot.Primary || craftingOpen) return;
+            LobbyCraftingTableTrigger source = FindAvailableTrigger();
+            if (source == null) return;
+
+            activeTrigger = source;
+            SetCraftingState(true);
+            RefreshActionContext();
+            ConfigureLobbyInventory();
+        }
+
+        private LobbyCraftingTableTrigger FindAvailableTrigger()
+        {
+            foreach (LobbyCraftingTableTrigger trigger in nearbyTriggers)
+            {
+                if (trigger != null && localPlayerMovement != null &&
+                    !trigger.IsBlocked(localPlayerMovement))
+                {
+                    return trigger;
+                }
+            }
+
+            return null;
+        }
+
+        private void RefreshActionContext()
+        {
+            if (playerControls == null) return;
+            bool available = !craftingOpen && FindAvailableTrigger() != null;
+            playerControls.SetActionContext(
+                MinigameActionSlot.Primary,
+                available ? craftingActionLabel : defaultActionLabel,
+                available);
         }
 
         private void SetCraftingState(bool open)

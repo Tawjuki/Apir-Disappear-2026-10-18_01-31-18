@@ -519,18 +519,21 @@ namespace ApirApir.AugmentedReality.Tests
             {
                 "part_common_magsasaka_head",
                 "part_rare_abogado_head",
+                "part_rare_pari_head",
                 "part_epic_bakunawa_head"
             }));
             Assert.That(catalog.Bodies.Select(part => part.Id), Is.EquivalentTo(new[]
             {
                 "part_common_magsasaka_body",
                 "part_rare_abogado_body",
+                "part_rare_pari_body",
                 "part_epic_bakunawa_body_legs"
             }));
             Assert.That(catalog.Legs.Select(part => part.Id), Is.EquivalentTo(new[]
             {
                 "part_common_magsasaka_legs",
-                "part_rare_abogado_legs"
+                "part_rare_abogado_legs",
+                "part_rare_pari_legs"
             }));
         }
 

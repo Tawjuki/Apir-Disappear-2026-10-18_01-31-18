@@ -19,7 +19,8 @@ namespace ApirApir.CardTests
             Assert.That(catalog.Parts.Count, Is.EqualTo(33));
             Assert.That(catalog.Parts.Keys.Distinct().Count(), Is.EqualTo(33));
             Assert.That(catalog.Parts.ContainsKey("part_common_pulis_head"), Is.True);
-            Assert.That(catalog.Parts.ContainsKey("part_rare_pulis_head"), Is.True);
+            Assert.That(catalog.Parts.ContainsKey("part_rare_pari_head"), Is.True);
+            Assert.That(catalog.Parts.ContainsKey("part_rare_pulis_head"), Is.False);
         }
 
         [Test]

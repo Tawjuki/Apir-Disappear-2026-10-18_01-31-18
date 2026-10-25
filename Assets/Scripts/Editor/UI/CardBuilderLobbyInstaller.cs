@@ -349,6 +349,9 @@ namespace ApirApir.UI.Editor
                 Bind("part_rare_abogado_head", "Assets/Art/Parts/Head/Rare/abogado head.png"),
                 Bind("part_rare_abogado_body", "Assets/Art/Parts/Body/Rare/abogado body.png"),
                 Bind("part_rare_abogado_legs", "Assets/Art/Parts/Legs/Rare/abogado legs.png"),
+                Bind("part_rare_pari_head", "Assets/Art/Parts/Head/Rare/pari head.png"),
+                Bind("part_rare_pari_body", "Assets/Art/Parts/Body/Rare/pari body.png"),
+                Bind("part_rare_pari_legs", "Assets/Art/Parts/Legs/Rare/pari legs.png"),
                 Bind("part_epic_bakunawa_head", "Assets/Art/Parts/Head/Epic/bakunawa head.png"),
                 Bind("part_epic_bakunawa_body_legs",
                     "Assets/Art/Parts/Hybrid/Body&Legs/Epic/bakunawa body&legs.png")

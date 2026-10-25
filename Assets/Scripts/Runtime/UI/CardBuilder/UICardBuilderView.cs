@@ -119,9 +119,9 @@ namespace ApirApir.UI.CardBuilder
             Func<string, Sprite> spriteResolver)
         {
             if (snapshot == null) return;
-            Sprite head = snapshot.Head.IsEmpty ? null : spriteResolver?.Invoke(snapshot.Head.DefinitionId);
-            Sprite body = snapshot.Body.IsEmpty ? null : spriteResolver?.Invoke(snapshot.Body.DefinitionId);
-            Sprite legs = snapshot.Legs.IsEmpty ? null : spriteResolver?.Invoke(snapshot.Legs.DefinitionId);
+            Sprite head = ResolvePartSprite(snapshot.Head, spriteResolver);
+            Sprite body = ResolvePartSprite(snapshot.Body, spriteResolver);
+            Sprite legs = ResolvePartSprite(snapshot.Legs, spriteResolver);
             if (preview != null)
             {
                 preview.SetParts(head, body, legs);
@@ -236,6 +236,15 @@ namespace ApirApir.UI.CardBuilder
         private void RemoveBody() => PartRemovalRequested?.Invoke(CardBuilderPartSlot.Body);
         private void RemoveLegs() => PartRemovalRequested?.Invoke(CardBuilderPartSlot.Legs);
         private void RequestClear() => ClearRequested?.Invoke();
+
+        private static Sprite ResolvePartSprite(
+            CardPartSlotSnapshot part,
+            Func<string, Sprite> spriteResolver)
+        {
+            if (part == null || part.IsEmpty || spriteResolver == null) return null;
+            Sprite sprite = spriteResolver(part.VisualAssetId);
+            return sprite != null ? sprite : spriteResolver(part.DefinitionId);
+        }
 
         private static string BuildSummary(CardBuilderSelectionState selection)
         {

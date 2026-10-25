@@ -33,8 +33,23 @@ namespace ApirApir.Crafting.Tests
                 }));
             Assert.That(hybrid.OutputPart.OccupiedRegions,
                 Is.EqualTo(PartEquipmentRegion.Body | PartEquipmentRegion.Legs));
-            Assert.That(catalog.Parts.Keys.Any(value => value.Contains("pari")), Is.False,
-                "Pari remains unregistered until authoritative rarity and stats exist.");
+            Assert.That(catalog.Parts.Count, Is.EqualTo(11));
+            Assert.That(catalog.Parts.Keys.Count(value => value.Contains("pari")), Is.EqualTo(3));
+            Assert.That(catalog.Parts["part_rare_pari_head"].DisplayName, Is.EqualTo("Pari Head"));
+            Assert.That(catalog.Parts["part_rare_pari_body"].DisplayName, Is.EqualTo("Pari Body"));
+            Assert.That(catalog.Parts["part_rare_pari_legs"].DisplayName, Is.EqualTo("Pari Legs"));
+            Assert.That(catalog.Recipes["recipe_rare_pari_head"].Requirements
+                    .Select(value => $"{value.MaterialId}:{value.Quantity}"),
+                Is.EquivalentTo(new[] { "rare_rosaryo:1", "common_tela:2" }));
+            Assert.That(catalog.Recipes["recipe_rare_pari_body"].Requirements
+                    .Select(value => $"{value.MaterialId}:{value.Quantity}"),
+                Is.EquivalentTo(new[]
+                {
+                    "rare_rosaryo:1", "common_kandila:2", "common_tela:2"
+                }));
+            Assert.That(catalog.Recipes["recipe_rare_pari_legs"].Requirements
+                    .Select(value => $"{value.MaterialId}:{value.Quantity}"),
+                Is.EquivalentTo(new[] { "rare_rosaryo:1", "common_goma:2" }));
         }
 
         [Test]
@@ -108,9 +123,9 @@ namespace ApirApir.Crafting.Tests
                 { "recipe_rare_abogado_head", "common_tela:1,rare_salamin:2" },
                 { "recipe_rare_abogado_body", "common_tela:2,rare_salamin:1,rare_tinta:2" },
                 { "recipe_rare_abogado_legs", "common_goma:1,rare_tinta:2" },
-                { "recipe_rare_pulis_head", "common_bakal:1,rare_tsapa:2" },
-                { "recipe_rare_pulis_body", "common_tela:2,rare_tinta:1,rare_tsapa:2" },
-                { "recipe_rare_pulis_legs", "common_goma:1,rare_tinta:1,rare_tsapa:1" },
+                { "recipe_rare_pari_head", "common_bakal:1,rare_tsapa:2" },
+                { "recipe_rare_pari_body", "common_tela:2,rare_tinta:1,rare_tsapa:2" },
+                { "recipe_rare_pari_legs", "common_goma:1,rare_tinta:1,rare_tsapa:1" },
                 { "recipe_rare_manggagayuma_head", "common_tali:1,rare_bote:1,rare_salamin:1" },
                 { "recipe_rare_manggagayuma_body", "common_tela:2,rare_bote:2,rare_ugat:1" },
                 { "recipe_rare_manggagayuma_legs", "common_tali:1,rare_kandila:1,rare_ugat:1" },
@@ -205,16 +220,29 @@ namespace ApirApir.Crafting.Tests
         }
 
         [Test]
-        public void CommonAndRarePulis_AreDistinctDefinitions()
+        public void CommonPulisAndRarePari_AreDistinctDefinitions()
         {
             CraftingCatalog catalog = DefaultCraftingCatalog.Create();
             CraftingRecipe common = Recipe(catalog, "recipe_common_pulis_head");
-            CraftingRecipe rare = Recipe(catalog, "recipe_rare_pulis_head");
+            CraftingRecipe rare = Recipe(catalog, "recipe_rare_pari_head");
 
             Assert.That(common.CharacterId, Is.Not.EqualTo(rare.CharacterId));
             Assert.That(common.OutputPart.Id, Is.Not.EqualTo(rare.OutputPart.Id));
+            Assert.That(common.OutputPart.CharacterDisplayName, Is.EqualTo("Pulis"));
+            Assert.That(rare.OutputPart.CharacterDisplayName, Is.EqualTo("Pari"));
             Assert.That(common.Rarity, Is.EqualTo(PartRarity.Common));
             Assert.That(rare.Rarity, Is.EqualTo(PartRarity.Rare));
+        }
+
+        [Test]
+        public void LegacyRarePulisIdentifiers_ResolveToCanonicalPariContent()
+        {
+            CraftingCatalog catalog = DefaultCraftingCatalog.Create();
+
+            Assert.That(catalog.TryGetRecipe("recipe_rare_pulis_head", out CraftingRecipe recipe), Is.True);
+            Assert.That(recipe.Id, Is.EqualTo("recipe_rare_pari_head"));
+            Assert.That(catalog.TryGetPart("part_rare_pulis_head", out CraftablePartDefinition part), Is.True);
+            Assert.That(part.Id, Is.EqualTo("part_rare_pari_head"));
         }
 
         [Test]

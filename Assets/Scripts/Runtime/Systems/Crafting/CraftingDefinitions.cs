@@ -486,7 +486,23 @@ namespace ApirApir.Crafting
 
         public bool TryGetRecipe(string recipeId, out CraftingRecipe recipe)
         {
-            return recipes.TryGetValue(recipeId ?? string.Empty, out recipe);
+            return recipes.TryGetValue(NormalizeRecipeId(recipeId), out recipe);
+        }
+
+        public bool TryGetPart(string partId, out CraftablePartDefinition part)
+        {
+            return parts.TryGetValue(DefaultPartDefinitionCatalog.NormalizeId(partId), out part);
+        }
+
+        private static string NormalizeRecipeId(string recipeId)
+        {
+            switch (recipeId ?? string.Empty)
+            {
+                case "recipe_rare_pulis_head": return "recipe_rare_pari_head";
+                case "recipe_rare_pulis_body": return "recipe_rare_pari_body";
+                case "recipe_rare_pulis_legs": return "recipe_rare_pari_legs";
+                default: return recipeId ?? string.Empty;
+            }
         }
 
         public IReadOnlyList<CraftingRecipe> GetRecipesUsingMaterial(string materialId)

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -37,10 +38,19 @@ namespace ApirApir.Minigames
 
         public bool InputEnabled => inputEnabled;
         public PlayerInputSource LastMovementSource { get; private set; }
+        public event Action<MinigameActionSlot> ActionPressed;
 
         public void SetVirtualJoystick(MinigameVirtualJoystick joystick)
         {
             virtualJoystick = joystick;
+        }
+
+        public void SetActionContext(
+            MinigameActionSlot slot,
+            string actionLabel,
+            bool available)
+        {
+            MinigameContextActionView.GetActive(slot)?.SetContext(actionLabel, available);
         }
 
         public void SetInputEnabled(bool value)
@@ -112,6 +122,8 @@ namespace ApirApir.Minigames
             ReadAction(MinigameActionSlot.Utility, utilityButton, utilityKey, keyboard,
                 ref held, ref pressed, ref released);
 
+            PublishPressedActions(pressed);
+
             return new MinigameInputFrame(ReadMovement(), held, pressed, released);
         }
 
@@ -182,6 +194,19 @@ namespace ApirApir.Minigames
             ResolveActionButton(MinigameActionSlot.Secondary, secondaryButton)?.CancelInput();
             ResolveActionButton(MinigameActionSlot.Modifier, modifierButton)?.CancelInput();
             ResolveActionButton(MinigameActionSlot.Utility, utilityButton)?.CancelInput();
+        }
+
+        private void PublishPressedActions(MinigameActionMask pressed)
+        {
+            if (pressed == MinigameActionMask.None || ActionPressed == null) return;
+            for (int i = 0; i < 4; i++)
+            {
+                MinigameActionSlot slot = (MinigameActionSlot)i;
+                if ((pressed & MinigameInputFrame.ToMask(slot)) != 0)
+                {
+                    ActionPressed.Invoke(slot);
+                }
+            }
         }
 
         private static MinigameActionButton ResolveActionButton(
